@@ -19,10 +19,11 @@ void main(){
   //fsettings.serverPathPrefix = "/static";
   
   auto router = new URLRouter;
-  router.get("/", &index);
+  //router.get("/", &index);
   ////router.get("static/*", serverStaticFiles("public/", fsettings) );
   
-  //router.get("/", staticTemplate!"index.html"); // todo fix
+  //router.get("/", staticTemplate!"index.html");
+  router.get("/", serveStaticFile("public/index.html") );
   router.get("/ws", handleWebSockets(&ws_handle) );
   router.get("*", serveStaticFiles("public/"));
   
@@ -45,11 +46,11 @@ void ws_handle(scope WebSocket sock){
   }
 }
 
-
+/*
 void index(HTTPServerRequest req, HTTPServerResponse res){
   res.writeBody("Hello, World!");
 }
-
+*/
 
 /*
 void hello(HTTPServerRequest req, HTTPServerResponse res){

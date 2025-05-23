@@ -8,7 +8,7 @@ $ cd <FOLDER_NAME>
 $ make c
 
 
-http://127.0.0.1:8080/index.html
+http://127.0.0.1:8080/
 
 
 $ ldc2 -v
