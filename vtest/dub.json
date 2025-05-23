@@ -1,0 +1,15 @@
+{
+  "name": "vtest",
+  "description": "A simple vibe.d server application.",
+  
+  "targetName": "vtest",
+  "dflags": ["-w", "-O", "-static"],
+  "targetType": "executable",
+  "dependencies": {
+    "vibe-d": "~>0.9"
+  },
+  
+  "license": "proprietary",
+  "copyright": "Copyright © 2025, 221V",
+  "authors": [ "221V" ]
+}

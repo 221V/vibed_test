@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/vtest
+vtest.so
+vtest.dylib
+vtest.dll
+vtest.a
+vtest.lib
+vtest-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
