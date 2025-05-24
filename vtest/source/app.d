@@ -10,6 +10,12 @@ import vibe.http.websockets;
 import vibe.core.log;
 
 
+import std.stdio;
+import std.string;
+
+import memcached4d;
+
+
 void main(){
   auto settings = new HTTPServerSettings;
   settings.port = 8080;
@@ -25,6 +31,7 @@ void main(){
   //router.get("/", staticTemplate!"index.html");
   router.get("/", serveStaticFile("public/index.html") );
   router.get("/ws", handleWebSockets(&ws_handle) );
+  router.get("/test", &test);
   router.get("*", serveStaticFiles("public/"));
   
   //auto listener = listenHTTP(settings, &hello);
@@ -57,4 +64,28 @@ void hello(HTTPServerRequest req, HTTPServerResponse res){
   res.writeBody("Hello, World!");
 }
 */
+
+
+void test(HTTPServerRequest req, HTTPServerResponse res){
+  auto cache = memcachedConnect("127.0.0.1:11211");
+  
+  writeln("get test1 = ", cache.get!string("test1"));
+  
+  string v1 = "value1 = 🔥🦀";
+  
+  if(cache.store("test1", v1) == RETURN_STATE.SUCCESS ){
+    writeln("stored successfully");
+    writeln("get stored: ", cache.get!string("test1") );
+  }else{
+    writeln("not stored");
+  }
+  
+  string result = cache.get!string("test1");
+  writeln("get test1 = ", result);
+  
+  writeln(cache.del("test1"));
+  
+  res.writeBody("Hello, World!\n" ~ result);
+}
+
 
