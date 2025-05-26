@@ -6,7 +6,8 @@
   "dflags": ["-w", "-O", "-static"],
   "targetType": "executable",
   "dependencies": {
-    "vibe-d": "~>0.9"
+    "vibe-d": "~>0.9",
+    "mustache-d": "~>0.1.5"
   },
   
   "license": "proprietary",

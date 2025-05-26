@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset=utf-8>
+<title>Simple HTML5</title>
+</head>
+<body>
+
+{{{part1}}}
+
+<p>{{number1}}</p>
+
+{{#maybe1}}
+<p>777</p>
+{{/maybe1}}
+
+<p>{{result1}}</p>
+
+</body>
+</html>

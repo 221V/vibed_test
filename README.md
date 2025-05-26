@@ -20,6 +20,8 @@ sudo apt-get install memcached
 // https://github.com/TiberiuGal/memcached4d/blob/master/source/app.d
 // https://github.com/221V/memcached4d  -- fixed but with vibe-d
 
+// https://github.com/repeatedly/mustache-d/blob/master/example/projects.d
+// https://code.dlang.org/packages/mustache-d
 
 
 
