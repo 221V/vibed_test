@@ -15,6 +15,31 @@ import std.string;
 
 import memcached4d;
 
+import std.conv : to;
+
+
+
+
+/* test unproper arguments order */
+/* do not */
+alias test_key1 = int;
+alias test_key2 = int;
+
+string test_args_types_mismash(test_key1 x, test_key2 y){
+  return ( to!string(x) ~ " + " ~ to!string(y) ~ "  = " ~ to!string( x + y ) );
+}
+
+
+/* do like */
+struct test_key3 { int v; }
+struct test_key4 { int v; }
+
+string test_args_types_mismash2(test_key3 x, test_key4 y){
+  return ( to!string(x.v) ~ " + " ~ to!string(y.v) ~ "  = " ~ to!string( x.v + y.v ) );
+}
+
+
+
 
 void main(){
   auto settings = new HTTPServerSettings;
@@ -68,6 +93,25 @@ void hello(HTTPServerRequest req, HTTPServerResponse res){
 
 void test(HTTPServerRequest req, HTTPServerResponse res){
   auto cache = memcachedConnect("127.0.0.1:11211");
+  
+  
+  
+  /* test unproper arguments order */
+  /* do not */
+  test_key1 x = 5;
+  test_key2 y = 2;
+  //string r1 = test_args_types_mismash(x, y); // proper arguments order
+  string r1 = test_args_types_mismash(y, x); // unproper - this compiles but we got logic error bug in runtime.. :( use struct for compiler check this..
+  writeln("r1 = ", r1);
+  
+  /* do like */
+  test_key3 x2 = test_key3(5);
+  test_key4 y2 = test_key4(2);
+  string r2 = test_args_types_mismash2(x2, y2); // proper arguments order
+  //string r2 = test_args_types_mismash2(y2, x2); // unproper - this not compiles
+  writeln("r2 = ", r2);
+  
+  
   
   writeln("get test1 = ", cache.get!string("test1"));
   
