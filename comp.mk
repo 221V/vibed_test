@@ -3,6 +3,9 @@
 # todo clean
 
 c:
+	dub build --compiler ldc2
+
+c2:
 	dub build --compiler ldc2 --build release --force
 
 run:
@@ -12,5 +15,5 @@ run:
 
 default: run
 
-.PHONY: c run
+.PHONY: c c2 run
 
