@@ -26,13 +26,27 @@ alias MustacheEngine!(string) Mustache;
 
 /* test unproper arguments order */
 /* do not */
+/*
 alias test_key1 = int;
 alias test_key2 = int;
 
 string test_args_types_mismash(test_key1 x, test_key2 y){
   return ( to!string(x) ~ " + " ~ to!string(y) ~ "  = " ~ to!string( x + y ) );
 }
+*/
 
+
+/* do not */
+/*
+import std.typecons : Typedef;
+
+alias test_key5 = Typedef!int;
+alias test_key6 = Typedef!int;
+
+string test_args_types_mismash(test_key5 x, test_key6 y){
+  return ( to!string(x) ~ " + " ~ to!string(y) ~ "  = " ~ to!string( x + y ) );
+}
+*/
 
 /* do like */
 struct test_key3 { int v; }
@@ -102,11 +116,22 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   
   /* test unproper arguments order */
   /* do not */
+  /*
   test_key1 x = 5;
   test_key2 y = 2;
   //string r1 = test_args_types_mismash(x, y); // proper arguments order
   string r1 = test_args_types_mismash(y, x); // unproper - this compiles but we got logic error bug in runtime.. :( use struct for compiler check this..
   writeln("r1 = ", r1);
+  */
+  
+  /* do not */
+  /*
+  test_key5 x = 5;
+  test_key6 y = 2;
+  //string r1 = test_args_types_mismash(x, y); // proper arguments order
+  string r3 = test_args_types_mismash(y, x); // unproper - this compiles but we got logic error bug in runtime.. :( use struct for compiler check this..
+  writeln("r3 = ", r3);
+  */
   
   /* do like */
   test_key3 x2 = test_key3(5);
