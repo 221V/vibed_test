@@ -48,7 +48,20 @@ string test_args_types_mismash(test_key5 x, test_key6 y){
 }
 */
 
+
 /* do like */
+
+import std.typecons : Typedef;
+
+alias test_key5 = Typedef!(int, int.init, "key5");
+alias test_key6 = Typedef!(int, int.init, "key6");
+
+string test_args_types_mismash(test_key5 x, test_key6 y){
+  return ( to!string(x) ~ " + " ~ to!string(y) ~ "  = " ~ to!string( x + y ) );
+}
+
+
+/* or -  do like */
 struct test_key3 { int v; }
 struct test_key4 { int v; }
 
@@ -128,12 +141,20 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   /*
   test_key5 x = 5;
   test_key6 y = 2;
-  //string r1 = test_args_types_mismash(x, y); // proper arguments order
+  //string r3 = test_args_types_mismash(x, y); // proper arguments order
   string r3 = test_args_types_mismash(y, x); // unproper - this compiles but we got logic error bug in runtime.. :( use struct for compiler check this..
   writeln("r3 = ", r3);
   */
   
   /* do like */
+  
+  test_key5 x = 5;
+  test_key6 y = 2;
+  string r3 = test_args_types_mismash(x, y); // proper arguments order
+  //string r3 = test_args_types_mismash(y, x); // unproper - this not compiles
+  writeln("r3 = ", r3);
+  
+  /* or - do like */
   test_key3 x2 = test_key3(5);
   test_key4 y2 = test_key4(2);
   string r2 = test_args_types_mismash2(x2, y2); // proper arguments order
