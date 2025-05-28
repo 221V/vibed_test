@@ -19,6 +19,8 @@ import memcached4d;
 
 import std.conv : to;
 
+import tr;
+
 import mustache;
 alias MustacheEngine!(string) Mustache;
 
@@ -160,6 +162,16 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   string r2 = test_args_types_mismash2(x2, y2); // proper arguments order
   //string r2 = test_args_types_mismash2(y2, x2); // unproper - this not compiles
   writeln("r2 = ", r2);
+  
+  
+  
+  Language Lang = Language.uk;
+  writeln("tr 1 = ", Tr(Lang, TKey.hello));
+  writeln("tr 2 = ", Tr(Lang, TKey.welcome, ["username"], 0) );
+  writeln("tr 3 = ", Tr(Lang, TKey.apples, [], 1) );
+  writeln("tr 3 = ", Tr(Lang, TKey.apples, [], 2) ) ;
+  writeln("tr 3 = ", Tr(Lang, TKey.apples, [], 5) );
+  writeln("tr 4 = ", Tr(Lang, TKey.apples_n_oranges, ["6", "7"], 0) );
   
   
   
