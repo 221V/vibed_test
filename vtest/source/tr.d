@@ -57,17 +57,16 @@ string format_args(string txt, string[] args){
 
 
 string Tr(Language lang, TKey text_key, string[] args = [], int plural_num = 0){
-  auto key = cast(int)text_key;
   Translation translation;
   switch(lang){
     case Language.uk:
-      translation = tr_uk.translations[key];
+      translation = tr_uk.translations[text_key];
       break;
     //case Language.en:
-    //  translation = tr_en.translations[key];
+    //  translation = tr_en.translations[text_key];
     //  break;
     default :
-      translation = tr_en.translations[key];
+      translation = tr_en.translations[text_key];
   }
   
   if( (plural_num > 0) && (args.length < translation.arg_count) ){
