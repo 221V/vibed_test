@@ -3,8 +3,22 @@
 ```
 // vibe-d 0.10.2
 
-// "diet-ng" is an optional dependency of vibe.d that is chosen by default - to avoid that, remove the "diet-ng" entry from dub.selections.json.
-// https://github.com/vibe-d/vibe.d/blob/master/CHANGELOG.md
+
+// rm diet-ng 1.8.4 in vibe-http 1.2.2 -- https://github.com/221V/vibe-http/tree/rm_diet
+"vibe-d": "~>0.9",
+"mustache-d": "~>0.1.5"
+->
+"vibe-http": "~>1.2.2",
+"vibe-stream": "~>1.1.1",
+"mustache-d": "~>0.1.5"
+->
+"vibe-inet:crypto": "~>1.1.2",
+"vibe-inet": "~>1.1.2",
+"vibe-stream:tls": "~>1.1.1",
+"vibe-stream": "~>1.1.1",
+"vibe-inet:textfilter": "~>1.1.2",
+"mustache-d": "~>0.1.5"
+
 
 
 sudo apt-get install libevent-dev

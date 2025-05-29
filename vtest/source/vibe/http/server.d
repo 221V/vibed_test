@@ -32,7 +32,7 @@ import vibe.internal.string : formatAlloc, icmp2;
 
 import core.atomic;
 import core.vararg;
-import diet.traits : SafeFilterCallback, dietTraits;
+//import diet.traits : SafeFilterCallback, dietTraits;
 import std.algorithm : canFind, splitter;
 import std.array;
 import std.conv;
@@ -51,6 +51,11 @@ version (VibeNoSSL) enum HaveNoTLS = true;
 else version (Have_botan) enum HaveNoTLS = false;
 else version (Have_openssl) enum HaveNoTLS = false;
 else enum HaveNoTLS = true;
+
+
+// rm - comment - diet-ng shit
+// https://github.com/rejectedsoftware/diet-ng/blob/v1.8.4/source/diet/traits.d#L159
+
 
 /**************************************************************************************************/
 /* Public functions                                                                               */
@@ -255,7 +260,7 @@ void handleHTTPConnection(TCPConnection connection, HTTPServerContext context)
 	logTrace("Done handling connection.");
 }
 
-
+/+
 /**
 	Provides a HTTP request handler that responds with a static Diet template.
 */
@@ -265,6 +270,7 @@ void handleHTTPConnection(TCPConnection connection, HTTPServerContext context)
 		res.render!(template_file, req);
 	};
 }
++/
 
 /**
 	Provides a HTTP request handler that responds with a static redirection to the specified URL.
@@ -329,13 +335,15 @@ void setVibeDistHost(string host, ushort port)
 		res.render!("mytemplate.dt", title, pageNumber);
 		---
 */
+// comment cause no diet
+/+
 @property void render(string template_file, ALIASES...)(HTTPServerResponse res)
 {
 	res.contentType = "text/html; charset=UTF-8";
 	version (VibeUseOldDiet)
 		pragma(msg, "VibeUseOldDiet is not supported anymore. Please undefine in the package recipe.");
 	import vibe.stream.wrapper : streamOutputRange;
-	import diet.html : compileHTMLDietFile;
+	//import diet.html : compileHTMLDietFile;
 	auto output = streamOutputRange!1024(res.bodyWriter);
 	compileHTMLDietFile!(template_file, ALIASES, DefaultDietFilters)(output);
 }
@@ -347,7 +355,7 @@ void setVibeDistHost(string host, ushort port)
 @dietTraits
 struct DefaultDietFilters {
 	import diet.html : HTMLOutputStyle;
-	import diet.traits : SafeFilterCallback;
+	//import diet.traits : SafeFilterCallback;
 	import std.string : splitLines;
 
 	version (VibeOutputCompactHTML) enum HTMLOutputStyle htmlOutputStyle = HTMLOutputStyle.compact;
@@ -431,7 +439,7 @@ unittest {
 	assert(compile!":htmlescape !{\"<test>\"}" == "&lt;test&gt;");
 	assert(compile!":javascript\n\ttest();" == "<script>\n\t//<![CDATA[\n\ttest();\n\t//]]>\n</script>");
 }
-
++/
 
 /**
 	Creates a HTTPServerRequest suitable for writing unit tests.
