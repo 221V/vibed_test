@@ -6,7 +6,12 @@
   "dflags": ["-w", "-O", "-static"],
   "targetType": "executable",
   "dependencies": {
-    "vibe-d": "~>0.9",
+    "vibe-inet:crypto": "~>1.1.2",
+    "vibe-inet": "~>1.1.2",
+    "vibe-stream:tls": "~>1.1.1",
+    "vibe-stream": "~>1.1.1",
+    "vibe-inet:textfilter": "~>1.1.2",
+    
     "mustache-d": "~>0.1.5"
   },
   
