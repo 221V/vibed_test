@@ -92,6 +92,21 @@ void main(){
   settings.port = 8080;
   settings.bindAddresses = ["::1", "127.0.0.1"];
   
+  
+  toml_s = parseTOML(cast(string)read("settings.toml"));
+  if( are_valid_config_values(toml_s) ){}else{ return; }
+  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  //client = new PostgresClient("host=localhost port=5432 dbname=mydb user=username password=pass connect_timeout=5", 100);
+  client = new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
+    " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
+    " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
+    " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
+    " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
+    " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
+    cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer() );
+  
+  
   //auto fsettings = new HTTPFileServerSettings;
   //fsettings.serverPathPrefix = "/static";
   
@@ -221,7 +236,7 @@ string get_all_cities(){
 }
 
 void test_pg_conn_driver_queries(){
-  
+  /*
   client.pickConnection( (scope conn){
     QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
     params.preparedStatementName = "get_city_by_id";
@@ -236,8 +251,37 @@ void test_pg_conn_driver_queries(){
     //conn.prepareEx("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
     //immutable result1 = conn.execPrepared("", ValueFormat.BINARY);
     
+    destroy(conn);
   } );
+  */
+  
+  auto conn = client.lockConnection();
+  QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
+  params.preparedStatementName = "get_city_by_id";
+  params.argsVariadic(3); // https://github.com/denizzzka/dpq2/blob/master/example/example.d#L42  // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/query.d#L336 // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/source/vibe/db/postgresql/package.d#L423
+  conn.prepareEx(params.preparedStatementName, "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
+  auto result1 = conn.execPrepared(params);
+  
+  writeln("id: ", result1[0]["id"].as!PGinteger);
+  writeln("name: ", result1[0]["name"].as!PGtext);
+  writeln("population: ", result1[0]["population"].as!PGinteger);
+  
+  //conn.prepareEx("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
+  //immutable result1 = conn.execPrepared("", ValueFormat.BINARY);
+  
+  destroy(conn);
 }
+
+
+/*
+
+"SELECT id, name, population FROM test ORDER BY id"
+"UPDATE test SET name = $1, population = $2 WHERE id = $3", [City_Name, City_Pop, City_Id]
+"INSERT INTO test (name, population) VALUES ($1, $2)", [City_Name, City_Pop]
+"INSERT INTO test (name, population) VALUES ($1, $2) RETURNING id", [City_Name, City_Pop]
+"DELETE FROM test WHERE id = $1", [City_Id]
+
+*/
 
 
 void test(HTTPServerRequest req, HTTPServerResponse res){
@@ -308,18 +352,6 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   writeln(cache.del("test1"));
   
   
-  toml_s = parseTOML(cast(string)read("settings.toml"));
-  if( are_valid_config_values(toml_s) ){}else{ return; }
-  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-  //client = new PostgresClient("host=localhost port=5432 dbname=mydb user=username password=pass connect_timeout=5", 100);
-  client = new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
-    " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
-    " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
-    " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
-    " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
-    " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
-    cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer() );
   //test_pg_conn_driver();
   test_pg_conn_driver_queries();
   
