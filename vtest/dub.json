@@ -14,7 +14,7 @@
     
     "mustache-d": "~>0.1.5",
     
-    "vibe-d-postgresql": "~>3.1.3",
+    "vibe-d-postgresql": "~>3.2.0-rc1",
     "toml": "~>2.0.1"
   },
   "libs": ["pq", "ssl", "crypto", "ldap", "gssapi_krb5"],

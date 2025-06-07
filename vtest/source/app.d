@@ -198,7 +198,7 @@ bool are_valid_config_values(ref TOMLDocument toml_s){
 /*
 void test_pg_conn_driver(){ // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/example/example.d#L13
   client.pickConnection( (scope conn){
-    immutable result = conn.execStatement(
+    immutable result = conn.exec(
       "SELECT 123 as first_num, 567 as second_num, 'abc'::text as third_text " ~
       "UNION ALL " ~
       "SELECT 890, 233, 'fgh'::text as third_text",
@@ -223,18 +223,18 @@ string get_all_cities(){
 void test_pg_conn_driver_queries(){
   
   client.pickConnection( (scope conn){
-    conn.prepareStatement("get_city_by_id", "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
+    conn.prepareEx("get_city_by_id", "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
     QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
     params.preparedStatementName = "get_city_by_id";
     params.argsVariadic(3); // https://github.com/denizzzka/dpq2/blob/master/example/example.d#L42  // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/query.d#L336 // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/source/vibe/db/postgresql/package.d#L423
-    auto result1 = conn.execPreparedStatement(params);
+    auto result1 = conn.execPrepared(params);
     
     writeln("id: ", result1[0]["id"].as!PGinteger);
     writeln("name: ", result1[0]["name"].as!PGtext);
     writeln("population: ", result1[0]["population"].as!PGinteger);
     
-    //conn.prepareStatement("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
-    //immutable result1 = conn.execPreparedStatement("", ValueFormat.BINARY);
+    //conn.prepareEx("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
+    //immutable result1 = conn.execPrepared("", ValueFormat.BINARY);
     
   } );
 }
