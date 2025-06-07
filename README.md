@@ -46,6 +46,8 @@ sudo apt-get install memcached
 // https://github.com/repeatedly/mustache-d/blob/master/example/projects.d
 // https://code.dlang.org/packages/mustache-d
 
+// https://github.com/dlang-community/toml/blob/master/tests/ut/toml.d
+// https://github.com/dlang-community/toml/blob/master/src/toml/toml.d
 
 
 $ cd <FOLDER_NAME>
