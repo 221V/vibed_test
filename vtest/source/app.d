@@ -25,6 +25,19 @@ import mustache;
 alias MustacheEngine!(string) Mustache;
 
 
+import vibe.db.postgresql;
+import vibe.data.bson;
+//import vibe.data.json;
+// https://github.com/vibe-d/vibe.d/blob/master/source/vibe/vibe.d
+
+PostgresClient client;
+
+
+import std.file : read;
+import toml;
+
+TOMLDocument toml_s;
+
 
 /* test unproper arguments order */
 /* do not */
@@ -124,6 +137,83 @@ void hello(HTTPServerRequest req, HTTPServerResponse res){
 */
 
 
+string s_toml_db              = "database";
+string s_toml_db_host         = "host";
+string s_toml_db_port         = "port";
+string s_toml_db_name         = "dbname";
+string s_toml_db_user         = "user";
+string s_toml_db_pass         = "pass";
+string s_toml_db_conn_timeout = "connect_timeout";
+string s_toml_db_conn_num     = "connections_number";
+
+bool are_valid_config_values(ref TOMLDocument toml_s){
+  string invalid_settings = "invalid settings: ";
+  string grumpy = " :(";
+  string invalid_group = " group ";
+  string invalid_key = " key" ~ grumpy;
+  
+  bool invalid_toml_group(string group){
+    writeln(invalid_settings ~ group ~ invalid_group ~ grumpy); return false;
+  }
+  
+  bool invalid_toml_value(string group, string key){
+    writeln(invalid_settings ~ group ~ invalid_group ~ key ~ invalid_key ~ grumpy); return false;
+  }
+  
+  if((s_toml_db in toml_s) != null){
+      auto toml_db = toml_s[s_toml_db];
+      
+      if((s_toml_db_host in toml_db) != null){
+        if(toml_db[s_toml_db_host].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
+      
+      if((s_toml_db_port in toml_db) != null){
+        if(toml_db[s_toml_db_port].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
+      
+      if((s_toml_db_name in toml_db) != null){
+        if(toml_db[s_toml_db_name].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
+      
+      if((s_toml_db_user in toml_db) != null){
+        if(toml_db[s_toml_db_user].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
+      
+      if((s_toml_db_pass in toml_db) != null){
+        if(toml_db[s_toml_db_pass].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
+      
+      if((s_toml_db_conn_timeout in toml_db) != null){
+        if(toml_db[s_toml_db_conn_timeout].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
+      
+      if((s_toml_db_conn_num in toml_db) != null){
+        if(toml_db[s_toml_db_conn_num].type == TOMLType.INTEGER){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
+      }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
+      
+  }else{ return invalid_toml_group(s_toml_db); }
+  return true;
+}
+
+void test_pg_conn_driver(){
+  client.pickConnection( (scope conn){
+    immutable result = conn.execStatement(
+      "SELECT 123 as first_num, 567 as second_num, 'abc'::text as third_text " ~
+      "UNION ALL " ~
+      "SELECT 890, 233, 'fgh'::text as third_text",
+      ValueFormat.BINARY
+    );
+    
+    assert(result[0]["second_num"].as!PGinteger == 567);
+    assert(result[1]["third_text"].as!PGtext == "fgh");
+    
+    foreach (val; rangify(result[0])){
+      writeln("Found entry: ", val.as!Bson.toJson);
+    }
+  } );
+}
+
+
 void test(HTTPServerRequest req, HTTPServerResponse res){
   auto cache = memcachedConnect("127.0.0.1:11211");
   
@@ -192,6 +282,20 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   writeln(cache.del("test1"));
   
   
+  toml_s = parseTOML(cast(string)read("settings.toml"));
+  if( are_valid_config_values(toml_s) ){}else{ return; }
+  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+  // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  //client = new PostgresClient("host=localhost port=5432 dbname=mydb user=username password=pass connect_timeout=5", 100);
+  client = new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
+    " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
+    " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
+    " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
+    " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
+    " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
+    cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer() );
+  test_pg_conn_driver();
+  
   
   Mustache mustache2;
   auto context2 = new Mustache.Context;
@@ -207,6 +311,9 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   
   //context.useSection("boolean");
   //assert(mustache.renderString(" {{#boolean}}YES{{/boolean}}\n {{#boolean}}GOOD{{/boolean}}\n", context) == " YES\n GOOD\n");
+  
+  //{{escaped_html_tags}}
+  //{{{not_escaped_html_tags}}}
   
   //{{#repo}}<b>{{name}}</b>{{/repo}}
   //{{^repo}}No repos :({{/repo}}
@@ -225,5 +332,4 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   //res.writeBody("Hello, World!\n" ~ result);
   res.writeBody( mustache.render("main", context) );
 }
-
 

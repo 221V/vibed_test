@@ -1,0 +1,11 @@
+# settings
+
+[database]
+host = "localhost" # localhost or ip string
+port = "5432" # string
+dbname = "mydb"
+user = "username"
+pass = "password"
+connect_timeout = "5" # seconds
+connections_number = 10 # integer
+

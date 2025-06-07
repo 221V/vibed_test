@@ -20,6 +20,15 @@
 "mustache-d": "~>0.1.5"
 
 
+because gssapi_krb5 not supports static linking - use dynamics linking for it
+ls /usr/lib/x86_64-linux-gnu/libgssapi_krb5*
+/usr/lib/x86_64-linux-gnu/libgssapi_krb5.so@  /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so.2@  /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so.2.2
+
+so delete -static
+"dflags": ["-w", "-O", "-static"],
+
+sudo apt update
+sudo apt-get install libpq-dev libpq5 libldap2-dev libssl-dev libkrb5-dev
 
 sudo apt-get install libevent-dev
 sudo apt-get install libmemcached-dev

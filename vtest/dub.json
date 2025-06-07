@@ -3,7 +3,7 @@
   "description": "A simple vibe.d server application.",
   
   "targetName": "vtest",
-  "dflags": ["-w", "-O", "-static"],
+  "dflags": ["-w", "-O"],
   "targetType": "executable",
   "dependencies": {
     "vibe-inet:crypto": "~>1.1.2",
@@ -12,8 +12,13 @@
     "vibe-stream": "~>1.1.1",
     "vibe-inet:textfilter": "~>1.1.2",
     
-    "mustache-d": "~>0.1.5"
+    "mustache-d": "~>0.1.5",
+    
+    "vibe-d-postgresql": "~>3.1.3",
+    "toml": "~>2.0.1"
   },
+  "libs": ["pq", "ssl", "crypto", "ldap", "gssapi_krb5"],
+  "lflags": [],
   
   "license": "proprietary",
   "copyright": "Copyright © 2025, 221V",
