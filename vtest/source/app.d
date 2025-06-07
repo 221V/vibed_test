@@ -195,6 +195,7 @@ bool are_valid_config_values(ref TOMLDocument toml_s){
   return true;
 }
 
+/*
 void test_pg_conn_driver(){
   client.pickConnection( (scope conn){
     immutable result = conn.execStatement(
@@ -210,6 +211,31 @@ void test_pg_conn_driver(){
     foreach (val; rangify(result[0])){
       writeln("Found entry: ", val.as!Bson.toJson);
     }
+  } );
+}
+*/
+
+
+string get_all_cities(){
+  return "SELECT id, name, population FROM test ORDER BY id";
+}
+
+void test_pg_conn_driver_queries(){
+  
+  client.pickConnection( (scope conn){
+    conn.prepareStatement("get_city_by_id", "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
+    QueryParams params;
+    params.preparedStatementName = "get_city_by_id";
+    params.argsVariadic(3);
+    auto result1 = conn.execPreparedStatement(params);
+    
+    writeln("id: ", result1[0]["id"].as!PGinteger);
+    writeln("name: ", result1[0]["name"].as!PGtext);
+    writeln("population: ", result1[0]["population"].as!PGinteger);
+    
+    //conn.prepareStatement("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
+    //immutable result1 = conn.execPreparedStatement("", ValueFormat.BINARY);
+    
   } );
 }
 
@@ -294,7 +320,8 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
     " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
     " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
     cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer() );
-  test_pg_conn_driver();
+  //test_pg_conn_driver();
+  test_pg_conn_driver_queries();
   
   
   Mustache mustache2;
