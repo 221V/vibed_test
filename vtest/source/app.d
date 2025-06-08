@@ -102,16 +102,19 @@ void main(){
   // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
   // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
   //client = new PostgresClient("host=localhost port=5432 dbname=mydb user=username password=pass connect_timeout=5", 100);
-  writeln("i = ", i);
   while(i > 0){
-    writeln("i = ", i);
+    //writeln("i = ", i);
     clients ~= new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
       " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
       " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
       " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
       " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
       " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
-      conn_num );
+      conn_num,
+      (scope Connection conn){
+        conn.prepareEx("get_city_by_id", "SELECT id, name, population FROM test WHERE id = $1");
+      } );
+    
     i--;
   }
   
@@ -265,21 +268,23 @@ void test_pg_conn_driver_queries(){
   } );
   */
   
-  auto conn = clients[0].lockConnection(); // todo think is this correct to take index 0 here
-  QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
-  params.preparedStatementName = "get_city_by_id";
-  params.argsVariadic(3); // https://github.com/denizzzka/dpq2/blob/master/example/example.d#L42  // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/query.d#L336 // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/source/vibe/db/postgresql/package.d#L423
-  conn.prepareEx(params.preparedStatementName, "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
-  auto result1 = conn.execPrepared(params);
-  
-  writeln("id: ", result1[0]["id"].as!PGinteger);
-  writeln("name: ", result1[0]["name"].as!PGtext);
-  writeln("population: ", result1[0]["population"].as!PGinteger);
-  
-  //conn.prepareEx("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
-  //immutable result1 = conn.execPrepared("", ValueFormat.BINARY);
-  
-  destroy(conn);
+  //auto conn = clients[0].lockConnection(); // todo think is this correct to take index 0 here
+  clients[0].pickConnection( (scope conn){ // todo think is this correct to take index 0 here
+    QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
+    params.preparedStatementName = "get_city_by_id";
+    params.argsVariadic(3); // https://github.com/denizzzka/dpq2/blob/master/example/example.d#L42  // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/query.d#L336 // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/source/vibe/db/postgresql/package.d#L423
+    //conn.prepareEx(params.preparedStatementName, "SELECT id, name, population FROM test WHERE id = $1"); // get_city_by_id
+    auto result1 = conn.execPrepared(params);
+    
+    writeln("id: ", result1[0]["id"].as!PGinteger);
+    writeln("name: ", result1[0]["name"].as!PGtext);
+    writeln("population: ", result1[0]["population"].as!PGinteger);
+    
+    //conn.prepareEx("q1", "UPDATE test SET name = $1, population = $2 WHERE id = $3"); // update_city_by_id
+    //immutable result1 = conn.execPrepared("", ValueFormat.BINARY);
+    
+    destroy(conn);
+  } );
 }
 
 
