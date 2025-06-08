@@ -1,4 +1,6 @@
 
+alias uint8  = ubyte;
+
 //import vibe.vibe;
 // https://github.com/vibe-d/vibe.d/blob/master/source/vibe/vibe.d
 
@@ -30,7 +32,7 @@ import vibe.data.bson;
 //import vibe.data.json;
 // https://github.com/vibe-d/vibe.d/blob/master/source/vibe/vibe.d
 
-PostgresClient client;
+PostgresClient[] clients;
 
 
 import std.file : read;
@@ -94,17 +96,24 @@ void main(){
   
   
   toml_s = parseTOML(cast(string)read("settings.toml"));
-  if( are_valid_config_values(toml_s) ){}else{ return; }
+  if( are_valid_config_values(toml_s) ){}else{ return; } // settings validation
+  uint conn_num = cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer();
+  uint8 i = cast(uint8) conn_num;
   // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
   // https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
   //client = new PostgresClient("host=localhost port=5432 dbname=mydb user=username password=pass connect_timeout=5", 100);
-  client = new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
-    " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
-    " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
-    " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
-    " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
-    " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
-    cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer() );
+  writeln("i = ", i);
+  while(i > 0){
+    writeln("i = ", i);
+    clients ~= new PostgresClient( "host=" ~ toml_s[s_toml_db][s_toml_db_host].str() ~
+      " port=" ~ toml_s[s_toml_db][s_toml_db_port].str() ~
+      " dbname=" ~ toml_s[s_toml_db][s_toml_db_name].str() ~
+      " user=" ~ toml_s[s_toml_db][s_toml_db_user].str() ~
+      " password=" ~ toml_s[s_toml_db][s_toml_db_pass].str() ~
+      " connect_timeout=" ~ toml_s[s_toml_db][s_toml_db_conn_timeout].str(),
+      conn_num );
+    i--;
+  }
   
   
   //auto fsettings = new HTTPFileServerSettings;
@@ -152,6 +161,7 @@ void hello(HTTPServerRequest req, HTTPServerResponse res){
 */
 
 
+// settings keys
 string s_toml_db              = "database";
 string s_toml_db_host         = "host";
 string s_toml_db_port         = "port";
@@ -161,7 +171,7 @@ string s_toml_db_pass         = "pass";
 string s_toml_db_conn_timeout = "connect_timeout";
 string s_toml_db_conn_num     = "connections_number";
 
-bool are_valid_config_values(ref TOMLDocument toml_s){
+bool are_valid_config_values(ref TOMLDocument toml_s){ // settings validation
   string invalid_settings = "invalid settings: ";
   string grumpy = " :(";
   string invalid_group = " group ";
@@ -255,7 +265,7 @@ void test_pg_conn_driver_queries(){
   } );
   */
   
-  auto conn = client.lockConnection();
+  auto conn = clients[0].lockConnection(); // todo think is this correct to take index 0 here
   QueryParams params; // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/args.d#L15
   params.preparedStatementName = "get_city_by_id";
   params.argsVariadic(3); // https://github.com/denizzzka/dpq2/blob/master/example/example.d#L42  // https://github.com/denizzzka/dpq2/blob/master/src/dpq2/query.d#L336 // https://github.com/denizzzka/vibe.d.db.postgresql/blob/master/source/vibe/db/postgresql/package.d#L423
