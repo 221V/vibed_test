@@ -1,5 +1,9 @@
 # settings
 
+[http]
+port = 8080 # integer
+host = "127.0.0.1" # "127.0.0.1" or "::1" etc - ipv4 or ipv6 string
+
 [database]
 host = "localhost" # localhost or ip string
 port = "5432" # string
