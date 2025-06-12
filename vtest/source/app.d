@@ -41,6 +41,22 @@ import toml;
 TOMLDocument toml_s;
 
 
+// settings keys
+string s_toml_http            = "http";
+string s_toml_http_host       = "host";
+string s_toml_http_port       = "port";
+
+string s_toml_db              = "database";
+string s_toml_db_host         = "host";
+string s_toml_db_port         = "port";
+string s_toml_db_name         = "dbname";
+string s_toml_db_user         = "user";
+string s_toml_db_pass         = "pass";
+string s_toml_db_conn_timeout = "connect_timeout";
+string s_toml_db_conn_num     = "connections_number";
+
+
+
 /* test unproper arguments order */
 /* do not */
 /*
@@ -90,11 +106,6 @@ string test_args_types_mismash2(test_key3 x, test_key4 y){
 
 
 void main(){
-  auto settings = new HTTPServerSettings;
-  settings.port = 8080;
-  settings.bindAddresses = ["::1", "127.0.0.1"];
-  
-  
   toml_s = parseTOML(cast(string)read("settings.toml"));
   if( are_valid_config_values(toml_s) ){}else{ return; } // settings validation
   uint conn_num = cast(uint) toml_s[s_toml_db][s_toml_db_conn_num].integer();
@@ -117,6 +128,13 @@ void main(){
     
     i--;
   }
+  
+  
+  auto settings = new HTTPServerSettings;
+  //settings.port = 8080;
+  //settings.bindAddresses = ["::1", "127.0.0.1"];
+  settings.port = cast(ushort)toml_s[s_toml_http][s_toml_http_port].integer();
+  settings.bindAddresses = [ toml_s[s_toml_http][s_toml_http_host].str().idup ];
   
   
   //auto fsettings = new HTTPFileServerSettings;
@@ -164,15 +182,6 @@ void hello(HTTPServerRequest req, HTTPServerResponse res){
 */
 
 
-// settings keys
-string s_toml_db              = "database";
-string s_toml_db_host         = "host";
-string s_toml_db_port         = "port";
-string s_toml_db_name         = "dbname";
-string s_toml_db_user         = "user";
-string s_toml_db_pass         = "pass";
-string s_toml_db_conn_timeout = "connect_timeout";
-string s_toml_db_conn_num     = "connections_number";
 
 bool are_valid_config_values(ref TOMLDocument toml_s){ // settings validation
   string invalid_settings = "invalid settings: ";
@@ -188,37 +197,52 @@ bool are_valid_config_values(ref TOMLDocument toml_s){ // settings validation
     writeln(invalid_settings ~ group ~ invalid_group ~ key ~ invalid_key ~ grumpy); return false;
   }
   
+  
+  if((s_toml_http in toml_s) != null){
+    auto toml_http = toml_s[s_toml_http];
+    
+    if((s_toml_http_host in toml_http) != null){
+      if(toml_http[s_toml_http_host].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_http, s_toml_http_host); }
+    }else{ return invalid_toml_value(s_toml_http, s_toml_http_host); }
+    
+    if((s_toml_http_port in toml_http) != null){
+      if(toml_http[s_toml_http_port].type == TOMLType.INTEGER){}else{ return invalid_toml_value(s_toml_http, s_toml_http_port); }
+    }else{ return invalid_toml_value(s_toml_http, s_toml_http_port); }
+    
+  }else{ return invalid_toml_group(s_toml_http); }
+  
+  
   if((s_toml_db in toml_s) != null){
-      auto toml_db = toml_s[s_toml_db];
-      
-      if((s_toml_db_host in toml_db) != null){
-        if(toml_db[s_toml_db_host].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
-      
-      if((s_toml_db_port in toml_db) != null){
-        if(toml_db[s_toml_db_port].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
-      
-      if((s_toml_db_name in toml_db) != null){
-        if(toml_db[s_toml_db_name].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
-      
-      if((s_toml_db_user in toml_db) != null){
-        if(toml_db[s_toml_db_user].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
-      
-      if((s_toml_db_pass in toml_db) != null){
-        if(toml_db[s_toml_db_pass].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
-      
-      if((s_toml_db_conn_timeout in toml_db) != null){
-        if(toml_db[s_toml_db_conn_timeout].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
-      
-      if((s_toml_db_conn_num in toml_db) != null){
-        if(toml_db[s_toml_db_conn_num].type == TOMLType.INTEGER){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
-      }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
-      
+    auto toml_db = toml_s[s_toml_db];
+    
+    if((s_toml_db_host in toml_db) != null){
+      if(toml_db[s_toml_db_host].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_host); }
+    
+    if((s_toml_db_port in toml_db) != null){
+      if(toml_db[s_toml_db_port].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_port); }
+    
+    if((s_toml_db_name in toml_db) != null){
+      if(toml_db[s_toml_db_name].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_name); }
+    
+    if((s_toml_db_user in toml_db) != null){
+      if(toml_db[s_toml_db_user].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_user); }
+    
+    if((s_toml_db_pass in toml_db) != null){
+      if(toml_db[s_toml_db_pass].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_pass); }
+    
+    if((s_toml_db_conn_timeout in toml_db) != null){
+      if(toml_db[s_toml_db_conn_timeout].type == TOMLType.STRING){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_timeout); }
+    
+    if((s_toml_db_conn_num in toml_db) != null){
+      if(toml_db[s_toml_db_conn_num].type == TOMLType.INTEGER){}else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
+    }else{ return invalid_toml_value(s_toml_db, s_toml_db_conn_num); }
+  
   }else{ return invalid_toml_group(s_toml_db); }
   return true;
 }
