@@ -14,4 +14,3 @@ vtest-test-*
 *.o
 *.obj
 *.lst
-settings.toml
