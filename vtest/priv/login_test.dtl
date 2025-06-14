@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<title>login test - ws bert</title>
+</head>
+<body>
+
+{{{part1}}}
+
+<p>{{number1}}</p>
+
+{{#maybe1}}
+<p>777</p>
+{{/maybe1}}
+
+<p>{{result1}}</p>
+
+<script src="/js/BigInteger.min.js" defer></script>
+<script src="/js/ieee754.js" defer></script>
+<script src="/js/bert.js" defer></script>
+<script src="/js/test_bignum.js" defer></script>
+<script src="/js/ws_conn.js" defer></script>
+<script>
+window.addEventListener('load', function(){
+  ws_start();
+});
+</script>
+</body>
+</html>

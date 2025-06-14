@@ -11,6 +11,8 @@ import vibe.http.fileserver;
 import vibe.http.websockets;
 import vibe.core.log;
 
+import ws_bert_login : ws_bert_handle, login_test; // login - logged - logout -- via ws with bert ++ memcached + postgresql for sessions
+
 
 import std.string;
 //import std.array;
@@ -126,9 +128,11 @@ void main(){
   ////router.get("static/*", serverStaticFiles("public/", fsettings) );
   
   //router.get("/", staticTemplate!"index.html");
-  router.get("/", serveStaticFile("public/index.html") );
-  router.get("/ws", handleWebSockets(&ws_handle) );
-  router.get("/test", &test);
+  router.get("/", serveStaticFile("public/index.html") ); // static html + ws echo example
+  router.get("/ws", handleWebSockets(&ws_handle) ); // static html + ws echo example
+  router.get("/test", &test); // Mustache template + memcached + postgresql pool example
+  router.get("/ws_login_test", handleWebSockets(&ws_bert_handle) ); // ws handler begins from "ws_" and next same http page path // login - logged - logout -- via ws with bert
+  router.get("/login_test", &login_test); // login - logged - logout -- via ws with bert
   router.get("*", serveStaticFiles("public/"));
   
   //auto listener = listenHTTP(settings, &hello);

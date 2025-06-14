@@ -56,6 +56,7 @@ $ make c
 
 http://127.0.0.1:8080/
 http://127.0.0.1:8080/test
+http://127.0.0.1:8080/login_test
 
 
 $ ldc2 -v
