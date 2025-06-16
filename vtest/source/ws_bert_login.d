@@ -1,5 +1,6 @@
 
 alias uint8  = ubyte;
+alias uint32 = int;
 
 import vibe.core.core;
 import vibe.http.router;
@@ -54,6 +55,26 @@ void msg_match(BertValue decoded, WebSocket sock){
         sock.send("{console.log(" ~ to!string(num1 + 42) ~ ")}"); // got 43 in browser console
         
       } // else do nothing
+      
+      if(auto str1 = cast(string)decoded1[1].binaryValue){
+        writeln("str1 = ", str1, " ", typeof(str1).stringof); // ws.send(enc(tuple( number(1), bin('blabla'), number(777) ))); // Decoded: {1, <<62,6C,61,62,6C,61>>, 777} // str1 = blabla string
+        sock.send("{console.log('" ~ str1 ~ " la-la-la" ~ "')}"); // got 'blabla la-la-la' in browser console
+        
+      } // else do nothing
+      
+      if(decoded1[2].type_ == BertType.List){
+        auto list1 = decoded1[2].listValue; // ws.send(enc(tuple( number(1), bin('blabla'), list( number(1), number(2), number(3) ) ))); // Decoded: {1, <<62,6C,61,62,6C,61>>, [1, 2, 3]}
+        if(list1.length == 3){
+          
+          if(auto num31 = cast(uint32)list1[0].intValue){
+            writeln("num31 = ", num31, " ", typeof(num31).stringof); // ws.send(enc(tuple( number(1), bin('9'), list( number(1), number(2), number(3) ) ))); // Decoded: {1, <<39>>, [1, 2, 3]} // num31 = 1 int
+            sock.send("{console.log(" ~ to!string(num31 + 77) ~ ")}"); // got 78 in browser console
+          } // else do nothing
+        
+        } // else do nothing
+      
+      } // else do nothing
+    
     } // else do nothing
   } // else do nothing
 }
