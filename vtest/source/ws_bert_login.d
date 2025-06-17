@@ -88,7 +88,7 @@ void msg_match(BertValue decoded, WebSocket sock){
       // ws.send(enc(tuple( number(1), bin('9'), bignum( big_value ) ))); // got as BigInt
       if(decoded1[2].type_ == BertType.BigInt){
         if(auto num3b = decoded1[2].bigintValue){
-          writeln("num3b = ", num3b, " ", typeof(num3b).stringof); // {1, <<57>>, 6119606703341361196067033413} // num3b = 6119606703341361196067033413 BigInt
+          writeln("num3b = ", num3b, " ", typeof(num3b).stringof); // Decoded: {1, <<57>>, 6119606703341361196067033413} // num3b = 6119606703341361196067033413 BigInt
         } // else do nothing
       } // else do nothing
       
