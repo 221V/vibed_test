@@ -145,8 +145,7 @@ struct BertValue{
         result.put("<<");
         foreach(i, b; binaryValue){
           if(i > 0){ result.put(","); }
-          //result.put(format("%02X", b)); // string bytes in hex = <<"blabla">> = <<62,6C,61,62,6C,61>>
-          result.put(to!string(b)); // string bytes in dec (like in erlang) = <<"blabla">> = <<98,108,97,98,108,97>>
+          result.put(to!string(b));
         }
         result.put(">>");
         return result.data;
@@ -169,26 +168,9 @@ ubyte[] bertEncode(BertValue term){
   return [cast(ubyte)BERT_TAG.VERSION] ~ term.encode();
 }
 
-/*
-ubyte[] encodeInt(byte value){ // small_integer - int8
-  return [cast(ubyte)BERT_TAG.SMALL_INT, cast(ubyte)value];
-}
-*/
-
 ubyte[] encodeInt(ubyte value){ // small_integer - uint8
   return [cast(ubyte)BERT_TAG.SMALL_INT, value];
 }
-
-/*
-ubyte[] encodeInt(short value){ // integer - int16
-  if(value >= 0 && value <= 255){
-    return [cast(ubyte)BERT_TAG.SMALL_INT, cast(ubyte)value];
-  }else{
-    ubyte[4] bytes = nativeToBigEndian!int(cast(int)value);
-    return [cast(ubyte)BERT_TAG.INT] ~ bytes[];
-  }
-}
-*/
 
 ubyte[] encodeInt(ushort value){ // integer - uint16
   if(value <= 255) {
@@ -198,19 +180,6 @@ ubyte[] encodeInt(ushort value){ // integer - uint16
     return [cast(ubyte)BERT_TAG.INT] ~ bytes[];
   }
 }
-
-/*
-ubyte[] encodeInt(int value){ // integer - int32
-  if(value >= 0 && value <= 255){
-    return [cast(ubyte)BERT_TAG.SMALL_INT, cast(ubyte)value];
-  }else if(value >= -2147483648 && value <= 2147483647){
-    ubyte[4] bytes = nativeToBigEndian!int(value);
-    return [cast(ubyte)BERT_TAG.INT] ~ bytes[];
-  }else{
-    return encodeBigInt( cast(ulong)value );
-  }
-}
-*/
 
 ubyte[] encodeInt(uint value){ // integer - uint32
   if(value <= 255){
@@ -223,19 +192,6 @@ ubyte[] encodeInt(uint value){ // integer - uint32
   }
 }
 
-/*
-ubyte[] encodeInt(long value){ // integer - small_big_int - int64 ;; we do not use erlang large_big_int because small_big_int max value = 2^(8*255) - 1 ;; it is too enaught
-  if(value >= 0 && value <= 255){
-    return [cast(ubyte)BERT_TAG.SMALL_INT, cast(ubyte)value];
-  }else if(value >= -2147483648 && value <= 2147483647){
-    ubyte[4] bytes = nativeToBigEndian!int(cast(int)value);
-    return [cast(ubyte)BERT_TAG.INT] ~ bytes[];
-  }else{
-    return encodeBigInt( cast(ulong)value );
-  }
-}
-*/
-
 ubyte[] encodeInt(ulong value){ // integer - small_big_int - uint64 ;; we do not use erlang large_big_int because small_big_int max value = 2^(8*255) - 1 ;; it is too enaught
   if(value <= 255){
     return [cast(ubyte)BERT_TAG.SMALL_INT, cast(ubyte)value];
@@ -246,31 +202,6 @@ ubyte[] encodeInt(ulong value){ // integer - small_big_int - uint64 ;; we do not
     return encodeBigInt(value);
   }
 }
-
-/*
-ubyte[] encodeBigInt(long value){
-  bool isNegative = (value < 0);
-  ulong absValue = isNegative ? (-value) : value;
-  
-  ubyte[8] temp;
-  size_t len = 0;
-  while(absValue > 0){
-    temp[len++] = cast(ubyte)(absValue & 0xFF);
-    absValue >>= 8;
-  }
-  
-  ubyte[] result = [
-    cast(ubyte)BERT_TAG.BIGINT,
-    cast(ubyte)len,
-    isNegative ? 1 : 0
-  ];
-  
-  foreach_reverse(i; 0..len){
-    result ~= temp[i];
-  }
-  return result;
-}
-*/
 
 ubyte[] encodeBigInt(ulong value){
   ubyte[8] temp;
@@ -302,33 +233,17 @@ ubyte[] encodeBigInt(BigInt value){
     return [cast(ubyte)BERT_TAG.BIGINT, 1, 0];
   }
   
-  //bool isNegative = value < 0; // no sign
-  //if(isNegative){
-  //  value = -value;
-  //}
-  
   ubyte[] digits;
   while(value > 0){
     digits ~= cast(ubyte)(value & 0xFF);
     value >>= 8;
   }
   
-  /* // we do not use erlang large_big_int because small_big_int max value = 2^(8*255) - 1 ;; it is too enaught
-  ubyte tag;
-  if(digits.length <= 255) {
-    tag = BERT_TAG.BIGINT;
-  }else{
-    tag = BERT_TAG.LARGE_BIGINT;
-  }
-  */
-  
   ubyte[] result;
-  //if(tag == BERT_TAG.BIGINT){
-    result = [ cast(ubyte)BERT_TAG.BIGINT,
-      cast(ubyte)digits.length,
-      //cast(ubyte)(isNegative ? 1 : 0) // no sign
-      cast(ubyte)(0) // no sign
-    ];
+  result = [ cast(ubyte)BERT_TAG.BIGINT, // we do not use erlang large_big_int because small_big_int max value = 2^(8*255) - 1 ;; it is too enaught
+    cast(ubyte)digits.length,
+    cast(ubyte)(0) // no sign
+  ];
   
   result ~= digits; // in little-endian
   return result;
@@ -378,30 +293,12 @@ ubyte[] encodeMap(const BertValue[BertValue] map){
   return [cast(ubyte)BERT_TAG.MAP] ~ lenBytes[] ~ map.byPair.map!(p => p.key.encode() ~ p.value.encode()).join();
 }
 
-/*
-BertValue bertInt(byte value){
-  BertValue v;
-  v.type_ = BertType.Int;
-  v.intValue = value;
-  return v;
-}
-*/
-
 BertValue bertInt(ubyte value){
   BertValue v;
   v.type_ = BertType.Int;
   v.intValue = value;
   return v;
 }
-
-/*
-BertValue bertInt(short value){
-  BertValue v;
-  v.type_ = BertType.Int;
-  v.intValue = value;
-  return v;
-}
-*/
 
 BertValue bertInt(ushort value){
   BertValue v;
@@ -410,30 +307,12 @@ BertValue bertInt(ushort value){
   return v;
 }
 
-/*
-BertValue bertInt(int value){
-  BertValue v;
-  v.type_ = BertType.Int;
-  v.intValue = value;
-  return v;
-}
-*/
-
 BertValue bertInt(uint value){
   BertValue v;
   v.type_ = BertType.Int;
   v.intValue = value;
   return v;
 }
-
-/*
-BertValue bertInt(long value){
-  BertValue v;
-  v.type_ = BertType.Int;
-  v.intValue = value;
-  return v;
-}
-*/
 
 BertValue bertInt(ulong value){
   BertValue v;
@@ -590,7 +469,6 @@ struct BertDecoder{
         return bertNil();
       
       case BERT_TAG.BIGINT:
-      //case BERT_TAG.LARGE_BIG:
         return decodeBigInt();
       
       case BERT_TAG.MAP:
@@ -610,25 +488,11 @@ struct BertDecoder{
     }
   }
   
-  //private BertValue decodeBigInt(ubyte tag){ // BIGINT, not use LARGE_BIG
   private BertValue decodeBigInt(){ // BIGINT, not use LARGE_BIG
-    //uint n;
-    //ubyte sign; // ignore sign - as unsigned
-    
-    //if(tag == BERT_TAG.BIGINT){
-      if(pos >= data.length){ throw new Exception("Incomplete BIGINT"); }
-      uint n = data[pos++];
-    //}else{
-    //  if((pos + 4) > data.length){ throw new Exception("Incomplete LARGE_BIG size"); }
-    //  n = bigEndianToNative!uint(data[pos..pos+4][0..4]);
-    //  pos += 4;
-    //}
-    
-    writeln("642 n = ", n);
-    //writeln("n type = ", typeof(n).stringof);
+    if(pos >= data.length){ throw new Exception("Incomplete BIGINT"); }
+    uint n = data[pos++];
     
     if(pos >= data.length){ throw new Exception("Incomplete BIG sign"); }
-    //sign = data[pos++]; // ignore sign - as unsigned
     pos++; // skip sign
     
     if((pos + n) > data.length){ throw new Exception("Incomplete BIG data"); }
@@ -650,44 +514,7 @@ struct BertDecoder{
       }else{ // ( n == 5) || (n == 6) || (n == 7) || (n == 8)
         return bertInt(value);
       }
-      
-      /*
-      if(n == 2){
-        auto value = cast(ushort)littleEndianToNative!ushort(data[pos..pos+2][0..2]);
-        pos += n;
-        return bertInt(value);
-      }else if(n == 3){
-        ubyte[] temp = data[pos..pos+3][0..3];
-        auto value = cast(uint)littleEndianToNative!uint( [ temp[0], temp[1], temp[2], cast(ubyte)0x00 ] );
-        pos += n;
-        return bertInt(value);
-      }else if(n == 4){
-        auto value = cast(uint)littleEndianToNative!uint(data[pos..pos+4][0..4]);
-        pos += n;
-        return bertInt( cast(uint)value );
-      }else if(n == 5){
-        ubyte[] temp = data[pos..pos+5][0..5];
-        auto value = cast(ulong)littleEndianToNative!ulong( [ temp[0], temp[1], temp[2], temp[3], temp[4], cast(ubyte)0x00, cast(ubyte)0x00, cast(ubyte)0x00 ] );
-        pos += n;
-        return bertInt(value);
-      }else if(n == 6){
-        ubyte[] temp = data[pos..pos+6][0..6];
-        auto value = cast(ulong)littleEndianToNative!ulong( [ temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], cast(ubyte)0x00, cast(ubyte)0x00 ] );
-        pos += n;
-        return bertInt(value);
-      }else if(n == 7){
-        ubyte[] temp = data[pos..pos+7][0..7];
-        auto value = cast(ulong)littleEndianToNative!ulong( [ temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], temp[6], cast(ubyte)0x00 ] );
-        pos += n;
-        return bertInt(value);
-      }else{ // n == 8
-        auto value = cast(ulong)littleEndianToNative!ulong(data[pos..pos+8][0..8]);
-        pos += n;
-        return bertInt(value);
-      }
-      */
-      
-      //return bertInt(sign ? (-cast(long)value) : cast(long)value);
+    
     
     }else{ // just bigint
       BigInt value = 0;
