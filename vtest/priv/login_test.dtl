@@ -16,11 +16,97 @@
 
 <p>{{result1}}</p>
 
+<br><br>
+<input id="login1" type="text" value="test1" placeholder="nickname"><br>
+<input id="pass1" type="password" value="123" placeholder="password"><br>
+<button id="send_pass1" onclick="do_log_in();">Log In</button>
+
+<script>
+async function encryptAES256CBC(key, iv, plaintext){
+  const enc = new TextEncoder();
+  const cryptoKey = await window.crypto.subtle.importKey(
+    "raw", key, { name: "AES-CBC" }, false, ["encrypt"]
+  );
+  const ciphertext = await window.crypto.subtle.encrypt({ name: "AES-CBC", iv }, cryptoKey, enc.encode(plaintext));
+  return new Uint8Array(ciphertext);
+}
+
+async function decryptAES256CBC(key, iv, ciphertext){
+  const cryptoKey = await window.crypto.subtle.importKey(
+    "raw", key, { name: "AES-CBC" }, false, ["decrypt"]
+  );
+  const decrypted = await window.crypto.subtle.decrypt({ name: "AES-CBC", iv }, cryptoKey, ciphertext);
+  return new TextDecoder().decode(decrypted);
+}
+
+/*
+
+var txt = "12345678";
+var txt2 = "12345678testтест";
+
+var key = new Uint8Array([34, 74, 12, 214, 126, 234, 101, 147, 13, 32, 244, 185, 45, 217, 142, 33, 213, 116, 63, 179, 84, 23, 138, 187, 134, 130, 234, 54, 48, 66, 20, 152]);
+var iv = new Uint8Array([62, 133, 213, 219, 194, 200, 76, 142, 202, 16, 12, 237, 163, 147, 65, 93]);
+
+(async () => {
+  const cipherText = await encryptAES256CBC(key, iv, txt);
+  console.log("Encrypted (Uint8Array):", cipherText);
+})();
+// Uint8Array(16) [223, 86, 210, 55, 192, 240, 144, 50, 159, 4, 238, 182, 171, 185, 80, 48]
+
+(async () => {
+  const cipherText = await encryptAES256CBC(key, iv, txt2);
+  console.log("Encrypted (Uint8Array):", cipherText);
+})();
+// Uint8Array(32) [90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121, 59, 232, 45, 180, 158, 153, 9, 54, 45, 244, 32, 85, 24, 162, 206, 56, 235, 107, 194, 143, 192]
+
+
+var encrypted = new Uint8Array([223, 86, 210, 55, 192, 240, 144, 50, 159, 4, 238, 182, 171, 185, 80, 48]);
+var encrypted2 = new Uint8Array([90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121, 59, 232, 45, 180, 158, 153, 9, 54, 45, 244, 32, 85, 24, 162, 206, 56, 235, 107, 194, 143, 192]);
+
+(async () => {
+  const decrypted = await decryptAES256CBC(key, iv, encrypted);
+  console.log("decrypted:", decrypted);
+})();
+// "12345678"
+
+(async () => {
+  const decrypted = await decryptAES256CBC(key, iv, encrypted2);
+  console.log("decrypted:", decrypted);
+})();
+// "12345678testтест"
+
+*/
+</script>
+
 <script src="/js/BigInteger.min.js" defer></script>
 <script src="/js/ieee754.js" defer></script>
 <script src="/js/bert.js" defer></script>
 <script src="/js/ws_conn.js" defer></script>
 <script>
+function uint8ArrayToStr(arr){
+  return '[' + Array.from(arr).join(',') + ']';
+}
+
+function do_log_in(){
+  if(!(window.key && window.iv && window.uid)){ // was not init yet
+    ws.send(enc(tuple( number(1) )));
+    return;
+  } // else - already was init
+  
+  console.log('window.key = ', window.key);
+  console.log('window.iv = ', window.iv);
+  
+  var login = qi('login1').value.trim();
+  var pass = qi('pass1').value.trim();
+  if((pass == '') || (login == '') ){ alert('Err! empty login/pass!'); return; }
+  
+  (async () => {
+    var enc_pass = await encryptAES256CBC(window.key, window.iv, pass);
+    ws.send(enc(tuple( number(2), bin(window.uid), bin(login), bin(uint8ArrayToStr(enc_pass)) )));
+  })();
+}
+
+
 window.addEventListener('load', function(){
   ws_start();
 });

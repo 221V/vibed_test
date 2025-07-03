@@ -53,6 +53,7 @@ function ws_start(){
     //for(var i = 0;i < protos.length; i++){ p = protos[i]; if(p.on(evt, p.do).status == "ok") return; }
     //if($bert.on(evt, $bert.do).status == "ok") return;
     try{
+      console.log('evt.data: ', evt.data);
       eval(evt.data);
     }catch(e){
       console.error("Eval failed: \n", e);

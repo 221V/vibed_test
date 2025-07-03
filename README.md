@@ -50,6 +50,9 @@ sudo apt-get install memcached
 // https://github.com/dlang-community/toml/blob/master/src/toml/toml.d
 
 
+// "secured": "~>3.0.0", // patched - https://github.com/221V/SecureD
+
+
 $ cd <FOLDER_NAME>
 $ make c
 

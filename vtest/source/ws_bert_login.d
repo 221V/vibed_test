@@ -34,13 +34,46 @@ import std.conv : to;
 import bert; // https://github.com/221V/dlang_erl_bert  https://git.4dev.win/game1/dlang_erl_bert
 
 
+import secured.symmetric; // https://github.com/221V/SecureD   // https://github.com/221V/js_AES256CBC
+
+import session;
+
+
 import mustache;
 alias MustacheEngine!(string) Mustache;
 
 
 
+string byte_arr_to_str(ubyte[] arr){
+  string[] str_arr;
+  foreach(elem; arr){
+    str_arr ~= to!string(elem);
+  }
+  return "[" ~ str_arr.join(",") ~ "]";
+}
+
+
+ubyte[] str_to_byte_arr(string str_arr){
+  str_arr = str_arr.replace("[", "").replace("]", "");
+  string[] parts = str_arr.split(",");
+  ubyte[] result;
+  result.reserve(parts.length);
+  foreach(part; parts){
+    result ~= to!ubyte(part.strip());
+  }
+  return result;
+}
+
+
 void ws_bert_handle(scope WebSocket sock){
+  //foreach(pair; req.headers.byKeyValue()){
+  //  writeln("Header: ", pair.key, " = ", pair.value);
+  //}
   // simple echo server + :)
+  
+  //string client_id = req.attributes.get("client_id", "");
+  //writeln("96 client_id = ", client_id);
+  
   while(sock.connected){
     //auto msg = sock.receiveText();
     //sock.send(msg ~ " :)");
@@ -55,14 +88,132 @@ void ws_bert_handle(scope WebSocket sock){
       msg_match(decoded, sock);
     }
   }
+  // todo delete data in userSessions here
 }
+
+
 
 void msg_match(BertValue decoded, WebSocket sock){
   writeln("Decoded: ", decoded.toString());
   
+  ubyte[] key;
+  ubyte[] iv;
+  
   if(decoded.type_ == BertType.Tuple){
     auto decoded1 = decoded.tupleValue;
-    if(decoded1.length == 3){
+    if(decoded1.length == 1){
+      if(auto num1 = cast(uint8)decoded1[0].intValue){ // we can use js AES for additional password encrypt for login-logout  // ws.send(enc(tuple( number(1) )));
+        if(num1 == 1){ // init login -- get key + iv for encrypt password and send to server
+          
+          /*
+          ubyte[] test_pass = cast(ubyte[])"12345678";
+          SymmetricKey key = generateSymmetricKey( SymmetricAlgorithm.AES256_CBC );
+          EncryptedData enc = encrypt(key, test_pass);
+          //auto iv_hex = toHexString!(LetterCase.lower)(enc.iv);
+          //auto encrypt = toHexString!(LetterCase.lower)(enc.cipherText);
+          auto iv_hex = enc.iv;
+          auto encrypt = enc.cipherText;
+          writeln("Key: ", key.key);
+          //writeln("Key: ", key.toString); // base64 encoded string
+          //writeln("IV: ", toHexString!(LetterCase.lower)(enc.iv));
+          writeln("IV: ", iv_hex);
+          //writeln("Encrypt: ", enc);
+          writeln("Encrypt: ", encrypt);
+          */
+          
+          
+          SymmetricKeyIV rand_key_iv = generateSymmetricKeyIV(); // default SymmetricAlgorithm.AES256_CBC
+          writeln("rand key: ", rand_key_iv.key);
+          writeln("rand iv: ", rand_key_iv.iv);
+          string client_id = generateCookie();
+          userSessions[client_id ~ "_key"] = rand_key_iv.key;
+          userSessions[client_id ~ "_iv"] = rand_key_iv.iv;
+          
+          /*
+          //auto test_pass = cast(ubyte[])"12345678";
+          auto test_pass = cast(ubyte[])"12345678testтест";
+          auto key = cast(ubyte[])[34, 74, 12, 214, 126, 234, 101, 147, 13, 32, 244, 185, 45, 217, 142, 33, 213, 116, 63, 179, 84, 23, 138, 187, 134, 130, 234, 54, 48, 66, 20, 152];
+          auto iv = cast(ubyte[])[62, 133, 213, 219, 194, 200, 76, 142, 202, 16, 12, 237, 163, 147, 65, 93];
+          
+          
+          auto encrypted = encrypt(key, iv, test_pass, SymmetricAlgorithm.AES256_CBC);
+          writeln("Encrypted: ", encrypted.cipherText); // [223, 86, 210, 55, 192, 240, 144, 50, 159, 4, 238, 182, 171, 185, 80, 48] // [90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121, 59, 232, 45, 180, 158, 153, 9, 54, 45, 244, 32, 85, 24, 162, 206, 56, 235, 107, 194, 143, 192]
+          
+          //auto encrypted_data = cast(ubyte[])[223, 86, 210, 55, 192, 240, 144, 50, 159, 4, 238, 182, 171, 185, 80, 48];
+          auto encrypted_data = cast(ubyte[])[90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121, 59, 232, 45, 180, 158, 153, 9, 54, 45, 244, 32, 85, 24, 162, 206, 56, 235, 107, 194, 143, 192];
+          
+          ubyte[] decrypted = decrypt(key, iv, encrypted_data, SymmetricAlgorithm.AES256_CBC);
+          writeln("Decrypted: ", decrypted); // [49, 50, 51, 52, 53, 54, 55, 56] // [49, 50, 51, 52, 53, 54, 55, 56, 116, 101, 115, 116, 209, 130, 208, 181, 209, 129, 209, 130]
+          writeln("Decrypted: ", cast(string)decrypted); // "12345678" // "12345678testтест"
+          */
+          
+          
+          sock.send("{window.key = new Uint8Array(" ~ byte_arr_to_str(rand_key_iv.key) ~ ");" ~
+            "window.iv = new Uint8Array(" ~ byte_arr_to_str(rand_key_iv.iv) ~ ");" ~
+            "window.uid = '" ~ client_id ~ "';" ~
+            "do_log_in();}");
+          
+          
+          /*
+          ubyte[] key = sock.context.get("aes_key", "");
+          ubyte[] iv = sock.context.get("aes_iv", "");
+          
+          if( key.empty || iv.empty ){}else{
+            sock.send("{window.key = new Uint8Array(" ~ byte_arr_to_str(key) ~ ");" ~
+              "window.iv = new Uint8Array(" ~ byte_arr_to_str(iv) ~ ");" ~
+              "do_log_in();}");
+          }
+          */
+          
+        } // else do nothing
+      } // else do nothing
+    
+    
+    }else if(decoded1.length == 4){ // {2, "uid", "login", "encrypted_pass"}
+      if(auto code2 = cast(uint8)decoded1[0].intValue){ // 2
+        if(code2 == 2){
+          
+          if(auto client_id = cast(string)decoded1[1].binaryValue){
+            writeln("client_id = ", client_id);
+          
+            if(auto login_str = cast(string)decoded1[2].binaryValue){
+              writeln("login_str = ", login_str);
+              
+              if(auto maybe_encrypted_pass = cast(string)decoded1[3].binaryValue){
+                writeln("maybe_encrypted_pass = ", maybe_encrypted_pass, " ", typeof(maybe_encrypted_pass).stringof); // Decoded: {2, <<116,101,115,116,49>>, <<91,49,50,53,44,50,51,54,44,50,50,48,44,50,53,53,44,49,50,48,44,49,54,57,44,49,56,51,44,49,48,50,44,50,49,49,44,51,53,44,50,52,54,44,50,49,55,44,55,49,44,50,54,44,50,49,50,44,56,56,93>>} // maybe_encoded_pass = [125,236,220,255,120,169,183,102,211,35,246,217,71,26,212,88] string
+                //sock.send("{console.log('" ~ str1 ~ " la-la-la" ~ "')}"); // 
+                
+                try{
+                  auto encrypted_pass = str_to_byte_arr(maybe_encrypted_pass);
+                  writeln("encoded_pass = ", encrypted_pass);
+                  
+                  if( (client_id ~ "_key") in userSessions){
+                    key = userSessions[client_id ~ "_key"];
+                  }
+                  if( (client_id ~ "_iv") in userSessions){
+                    iv = userSessions[client_id ~ "_iv"];
+                  }
+                  
+                  writeln("key = ", key);
+                  writeln("iv = ", iv);
+                  
+                  ubyte[] pass = decrypt(key, iv, encrypted_pass, SymmetricAlgorithm.AES256_CBC);
+                  writeln("Decrypted: ", pass); // byte array
+                  writeln("Decrypted: ", cast(string)pass); // string
+                  
+                  
+                }catch(Exception e){} // skip err, do nothing
+              
+              }
+            } // else do nothing
+            
+          } // else do nothing
+        } // else do nothing
+      } // else do nothing
+    
+    
+    
+    }else if(decoded1.length == 3){
       
       if(auto num1 = cast(uint8)decoded1[0].intValue){
         writeln("num1 = ", num1, " ", typeof(num1).stringof); // ws.send(enc(tuple( number(1), number(42), number(777) ))); // Decoded: {1, 42, 777} // num1 = 1 ubyte
@@ -75,6 +226,7 @@ void msg_match(BertValue decoded, WebSocket sock){
         sock.send("{console.log('" ~ str1 ~ " la-la-la" ~ "')}"); // got 'blabla la-la-la' in browser console
         
       } // else do nothing
+      
       
       // var big_value = bigInt("61196067033413");
       // ws.send(enc(tuple( number(1), bin('9'), bignum( big_value ) ))); // got as long for auto
@@ -111,6 +263,9 @@ void msg_match(BertValue decoded, WebSocket sock){
 }
 
 void login_test(HTTPServerRequest req, HTTPServerResponse res){
+  //string client_id = generateCookie();
+  //req.context["client_id"] = client_id;
+  
   Mustache mustache;
   auto context = new Mustache.Context;
   mustache.path = "priv";
