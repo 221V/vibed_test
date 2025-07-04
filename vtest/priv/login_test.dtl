@@ -22,6 +22,11 @@
 <button id="send_pass1" onclick="do_log_in();">Log In</button>
 
 <script>
+function uint8ArrayToStr(arr){
+  return '[' + Array.from(arr).join(',') + ']';
+}
+
+
 async function encryptAES256CBC(key, iv, plaintext){
   const enc = new TextEncoder();
   const cryptoKey = await window.crypto.subtle.importKey(
@@ -76,6 +81,94 @@ var encrypted2 = new Uint8Array([90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121,
 // "12345678testтест"
 
 */
+
+
+/*
+async function generateRSAKeyPair(){
+  const keyPair = await window.crypto.subtle.generateKey({
+      name: "RSA-OAEP",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), // 65537
+      hash: "SHA-256"
+    },
+    true, // can use few times
+    ["encrypt", "decrypt"] // use privileges
+  );
+  return keyPair;
+}
+
+
+(async () => {
+  const keys = await generateRSAKeyPair());
+  console.log("keys:", keys);
+})();
+*/
+
+/*
+const publicKeyBytes = new Uint8Array([45, 45, 45, 45, 45, 66, 69, 71, 73, 78, 32, 80, 85, 66, 76, 73, 67, 32, 75, 69, 89, 45, 45, 45, 45, 45, 10, 77, 73, 73, 66, 73, 106, 65, 78, 66, 103, 107, 113, 104, 107, 105, 71, 57, 119, 48, 66, 65, 81, 69, 70, 65, 65, 79, 67, 65, 81, 56, 65, 77, 73, 73, 66, 67, 103, 75, 67, 65, 81, 69, 65, 106, 104, 115, 88, 99, 50, 83, 73, 117, 100, 117, 78, 54, 71, 102, 57, 72, 55, 56, 70, 10, 99, 119, 97, 76, 53, 117, 69, 118, 108, 107, 102, 114, 55, 84, 115, 116, 117, 55, 117, 116, 103, 53, 89, 87, 104, 55, 71, 56, 105, 74, 102, 79, 72, 117, 88, 88, 84, 100, 100, 75, 82, 66, 107, 85, 55, 65, 71, 109, 67, 72, 51, 99, 99, 80, 69, 100, 103, 80, 122, 48, 106, 77, 84, 52, 10, 51, 50, 113, 108, 56, 79, 66, 109, 50, 101, 104, 66, 120, 121, 83, 97, 110, 80, 118, 79, 101, 81, 78, 109, 72, 87, 68, 80, 88, 73, 69, 111, 104, 51, 69, 51, 122, 76, 80, 66, 68, 121, 71, 99, 71, 66, 72, 99, 55, 103, 79, 121, 67, 89, 47, 85, 83, 106, 80, 77, 121, 73, 102, 53, 10, 101, 71, 87, 48, 70, 80, 119, 47, 48, 117, 87, 118, 90, 103, 75, 117, 78, 70, 70, 85, 57, 67, 117, 89, 86, 118, 74, 114, 66, 76, 121, 78, 120, 85, 76, 84, 108, 121, 79, 78, 52, 107, 84, 51, 72, 115, 53, 102, 52, 85, 97, 67, 81, 73, 85, 81, 72, 55, 110, 52, 72, 103, 81, 66, 10, 75, 107, 108, 119, 84, 80, 90, 82, 89, 76, 114, 90, 81, 105, 121, 73, 49, 50, 83, 111, 81, 109, 57, 49, 103, 49, 73, 120, 86, 121, 85, 75, 72, 121, 57, 75, 51, 85, 108, 86, 122, 88, 102, 86, 87, 97, 52, 53, 50, 101, 107, 113, 120, 67, 70, 47, 114, 100, 103, 83, 115, 80, 52, 78, 10, 106, 79, 50, 76, 114, 111, 90, 78, 83, 65, 83, 107, 119, 69, 56, 90, 89, 69, 49, 90, 77, 103, 89, 74, 74, 114, 90, 51, 78, 56, 66, 68, 84, 90, 80, 104, 109, 68, 70, 101, 97, 65, 110, 76, 83, 71, 54, 89, 97, 79, 122, 111, 80, 90, 80, 100, 86, 115, 116, 52, 112, 112, 47, 100, 10, 102, 119, 73, 68, 65, 81, 65, 66, 10, 45, 45, 45, 45, 45, 69, 78, 68, 32, 80, 85, 66, 76, 73, 67, 32, 75, 69, 89, 45, 45, 45, 45, 45, 10]);
+*/
+/* PEM file in bytes, but we need only key - DER (SPKI), not comments
+-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----
+*/
+
+// needs to Uint8Array → string (PEM) → DER (Uint8Array) → importKey("spki", ...)
+
+/*
+function uint8ArrayToString(array){
+  return new TextDecoder("utf-8").decode(array);
+}
+
+const pemString = uint8ArrayToString(publicKeyBytes);
+console.log(pemString);
+*/
+
+function rsa_pemToRawKey(pem){
+  const pemLines = pem.split('\n');
+  const base64Lines = pemLines
+    .filter(line => line.trim().length > 0 && !line.startsWith('-----'))
+    .join('');
+  
+  const binaryString = atob(base64Lines);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes; // DER/SPKI key
+}
+
+async function rsa_importPublicKey(byte_array){
+  const key_str = new TextDecoder("utf-8").decode(byte_array);
+  const keyBytes = rsa_pemToRawKey(key_str);
+  const keyBuffer = keyBytes.buffer;
+  const publicKey = await window.crypto.subtle.importKey(
+    "spki", // SubjectPublicKeyInfo - key format
+    keyBuffer,
+    {
+      name: "RSA-OAEP",
+      //hash: "SHA-256"
+      hash: "SHA-1"
+    },
+    true, // extractable
+    ["encrypt"] // allow privileges
+  );
+  return publicKey;
+}
+
+async function rsa_encrypt(plainText, publicKey){
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plainText);
+  const encryptedBuffer = await window.crypto.subtle.encrypt({
+      name: "RSA-OAEP"
+    },
+    publicKey,
+    data
+  );
+  return new Uint8Array(encryptedBuffer); // return Uint8Array, not Base64
+}
 </script>
 
 <script src="/js/BigInteger.min.js" defer></script>
@@ -83,18 +176,17 @@ var encrypted2 = new Uint8Array([90, 85, 212, 32, 94, 33, 182, 43, 20, 183, 121,
 <script src="/js/bert.js" defer></script>
 <script src="/js/ws_conn.js" defer></script>
 <script>
-function uint8ArrayToStr(arr){
-  return '[' + Array.from(arr).join(',') + ']';
-}
+var message0 = '12345678testтест';
 
 function do_log_in(){
-  if(!(window.key && window.iv && window.uid)){ // was not init yet
+  if(!(window.key && window.iv && window.rsa_pub_key && window.uid)){ // was not init yet
     ws.send(enc(tuple( number(1) )));
     return;
   } // else - already was init
   
   console.log('window.key = ', window.key);
   console.log('window.iv = ', window.iv);
+  console.log('window.rsa_pub_key = ', uint8ArrayToStr(window.rsa_pub_key));
   
   var login = qi('login1').value.trim();
   var pass = qi('pass1').value.trim();
@@ -103,6 +195,27 @@ function do_log_in(){
   (async () => {
     var enc_pass = await encryptAES256CBC(window.key, window.iv, pass);
     ws.send(enc(tuple( number(2), bin(window.uid), bin(login), bin(uint8ArrayToStr(enc_pass)) )));
+  })();
+  
+  // todo -- server send to client - public rsa key;; client send to server - encrypted by rsa aes key + encrypted by aes key message - data;; server decrypt all
+  (async () => {
+    //const publicKey = await rsa_importPublicKey(publicKeyBytes);
+    //const pemString = uint8ArrayToString(publicKeyBytes);
+    //const publicKeyDer = rsa_pemToRawKey(pemString);
+    //const publicKey = await rsa_importPublicKey(publicKeyDer);
+    //console.log('pemString = ', pemString);
+    //console.log('publicKeyDer = ', publicKeyDer);
+    
+    const publicKey = await rsa_importPublicKey(window.rsa_pub_key);
+    const originalMessage = '12345678testтест';
+    
+    const encrypted = await rsa_encrypt(message0, publicKey);
+    var encrypted12 = uint8ArrayToStr(encrypted);
+    console.log("encrypted (Uint8Array) = ", encrypted12); // this will be different every time
+    
+    ws.send(enc(tuple( number(3), bin(encrypted12) )));
+    
+    // cant decrypt without priv_key
   })();
 }
 
