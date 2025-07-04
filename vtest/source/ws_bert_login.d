@@ -35,6 +35,7 @@ import bert; // https://github.com/221V/dlang_erl_bert  https://git.4dev.win/gam
 
 
 import secured.symmetric; // https://github.com/221V/SecureD   // https://github.com/221V/js_AES256CBC
+import secured.rsa;
 
 import session;
 
@@ -74,6 +75,16 @@ void ws_bert_handle(scope WebSocket sock){
   //string client_id = req.attributes.get("client_id", "");
   //writeln("96 client_id = ", client_id);
   
+  // https://vibed.org/api/vibe.http.websockets/WebSocket
+  // https://vibed.org/api/vibe.http.websockets/WebSocket.request
+  // https://vibed.org/api/vibe.http.server/HTTPServerRequest
+  //writeln("sock.request = ", sock.request); // GET /ws_login_test HTTP/1.1
+  //writeln("sock.request.headers = ", sock.request.headers); // ["Host": "127.0.0.1:8080", "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0", "Accept": "*/*", "Accept-Language": "uk-UA,uk;q=0.8,en-US;q=0.5,en;q=0.3", "Accept-Encoding": "gzip, deflate, br, zstd", "Sec-WebSocket-Version": "13", "Origin": "http://127.0.0.1:8080", "Sec-WebSocket-Extensions": "permessage-deflate", "Sec-WebSocket-Key": "NW+zQGtSdkuSRHWuU/VevA==", "DNT": "1", "Sec-GPC": "1", "Connection": "keep-alive, Upgrade", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "websocket", "Sec-Fetch-Site": "same-origin", "Pragma": "no-cache", "Cache-Control": "no-cache", "Upgrade": "websocket"]
+  
+  //writeln("sock.request.context = ", sock.request.context); // []
+  //writeln("sock.request.params = ", sock.request.params); // []
+  //string client_id = req.params.get("client_id", "");
+  
   while(sock.connected){
     //auto msg = sock.receiveText();
     //sock.send(msg ~ " :)");
@@ -95,6 +106,26 @@ void ws_bert_handle(scope WebSocket sock){
 
 void msg_match(BertValue decoded, WebSocket sock){
   writeln("Decoded: ", decoded.toString());
+  
+  auto rsa_keypair = new RSA(2048); // Only allows for (2048/8)-42 = 214 bytes to be asymmetrically RSA encrypted
+  scope(exit) rsa_keypair.destroy();
+  
+  ubyte[] rsa_private_key = rsa_keypair.getPrivateKey(null);
+  ubyte[] rsa_public_key = rsa_keypair.getPublicKey();
+  //writeln("rsa_private_key = ", rsa_private_key);
+  //writeln("rsa_public_key = ", rsa_public_key);
+  
+  //ubyte[214] plaintext214 = 2; // 2 being an arbitrary value
+  auto plaintext214 = cast(ubyte[])"12345678testтест";
+  
+  ubyte[] encMessage214 = rsa_keypair.encrypt(plaintext214);
+  //writeln("encMessage214.length = ", encMessage214.length); // 256
+  //writeln("encMessage214 = ", encMessage214);
+  
+  ubyte[] decMessage214 = rsa_keypair.decrypt(encMessage214);
+  //writeln("decMessage214 = ", decMessage214);
+  writeln("decMessage214 = ", cast(string)decMessage214);
+  
   
   ubyte[] key;
   ubyte[] iv;
@@ -264,7 +295,11 @@ void msg_match(BertValue decoded, WebSocket sock){
 
 void login_test(HTTPServerRequest req, HTTPServerResponse res){
   //string client_id = generateCookie();
-  //req.context["client_id"] = client_id;
+  //writeln("client_id: ", client_id); // client_id: tkoy8ybolXM95fpEqYRY
+  //req.context["client_id"] = generateCookie();
+  //req.params["client_id"] = generateCookie();
+  //writeln("req.context = ", req.context); // req.context = ["client_id": MM2YjBQvSOSAdzLDZPNH]
+  //writeln("req.params = ", req.params);   // req.params = ["client_id": "Io-oRQ2DFXqBIShxs5z0"]
   
   Mustache mustache;
   auto context = new Mustache.Context;
