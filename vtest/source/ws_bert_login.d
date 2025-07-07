@@ -72,20 +72,21 @@ void ws_bert_handle(scope WebSocket sock){
   //}
   // simple echo server + :)
   
-  //string client_id = req.attributes.get("client_id", "");
-  //writeln("96 client_id = ", client_id);
-  
   // https://vibed.org/api/vibe.http.websockets/WebSocket
   // https://vibed.org/api/vibe.http.websockets/WebSocket.request
   // https://vibed.org/api/vibe.http.server/HTTPServerRequest
   //writeln("sock.request = ", sock.request); // GET /ws_login_test HTTP/1.1
   //writeln("sock.request.headers = ", sock.request.headers); // ["Host": "127.0.0.1:8080", "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0", "Accept": "*/*", "Accept-Language": "uk-UA,uk;q=0.8,en-US;q=0.5,en;q=0.3", "Accept-Encoding": "gzip, deflate, br, zstd", "Sec-WebSocket-Version": "13", "Origin": "http://127.0.0.1:8080", "Sec-WebSocket-Extensions": "permessage-deflate", "Sec-WebSocket-Key": "NW+zQGtSdkuSRHWuU/VevA==", "DNT": "1", "Sec-GPC": "1", "Connection": "keep-alive, Upgrade", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "websocket", "Sec-Fetch-Site": "same-origin", "Pragma": "no-cache", "Cache-Control": "no-cache", "Upgrade": "websocket"]
   
-  //writeln("sock.request.context = ", sock.request.context); // []
-  //writeln("sock.request.params = ", sock.request.params); // []
-  //string client_id = req.params.get("client_id", "");
+  //writeln("sock.request = ", sock.request);
+  //writeln("sock.request.query = ", sock.request.query); // ["client_id": "YaHoAnZo3JPYOwX7yn35"]
   
-  while(sock.connected){
+  //string client_id = "";
+  //if("client_id" in sock.request.query){
+  //  client_id = sock.request.query["client_id"];
+  //}
+  
+  while(sock.waitForData()){
     //auto msg = sock.receiveText();
     //sock.send(msg ~ " :)");
     auto msg = sock.receiveBinary();

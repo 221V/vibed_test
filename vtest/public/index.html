@@ -30,6 +30,27 @@
 </main>
 
 <script>
+async function generateCookie(){
+  const idLength = 15; // 15 bytes = 120 bits
+  const randomBytes = new Uint8Array(idLength);
+  window.crypto.getRandomValues(randomBytes); // crypto strong random bytes
+  
+  const hashBuffer = await window.crypto.subtle.digest("SHA-256", randomBytes.buffer); // sha-256 hash
+  const idBytes = new Uint8Array(hashBuffer.slice(0, 15)); // take first 15 bytes of hash
+  const base64 = btoa(String.fromCharCode.apply(null, idBytes)) // base64 encode (url safe)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return base64;
+}
+
+var cookie_user_id = localStorage.getItem('user_id');
+if(!(cookie_user_id)){
+  generateCookie().then(value => { localStorage.setItem('user_id', value); cookie_user_id = value; });
+}
+
+
+
 var websocket;
 var server = document.getElementById('server');
 var message = document.getElementById('message');
@@ -43,7 +64,10 @@ connected.style.display = 'none';
 content.style.display = 'none';
 
 function connect(){
-  wsHost = server.value;
+  //wsHost = server.value;
+  wsHost = server.value + '?client_id=' + cookie_user_id;
+  console.log('cookie_user_id = ', cookie_user_id);
+  console.log('wsHost = ', wsHost);
   websocket = new WebSocket(wsHost);
   showScreen('<b>Connecting to: ' +  wsHost + '</b>');
   websocket.onopen = function(evt){ onOpen(evt) };

@@ -15,7 +15,74 @@ import ws_bert_login : ws_bert_handle, login_test; // login - logged - logout --
 
 
 import std.string;
-//import std.array;
+import std.array;
+import std.algorithm;
+
+
+import std.datetime : SysTime, Clock; // , dur;
+//import core.sync.mutex : Mutex;
+import std.concurrency : spawn;
+import vibe.core.concurrency;
+import vibe.core.core : Task, sleep;
+import core.time : Duration, dur;
+
+
+struct UserState{
+  string client_id;
+  SysTime last_online_at;
+  
+  this(string client_id, SysTime last_online_at) pure nothrow @safe{
+    this.client_id = client_id;
+    this.last_online_at = last_online_at;
+  }
+}
+
+alias UserStateMap = UserState[string];
+
+class UserStateManager{
+  private UserStateMap states;
+  private Object lockObj;
+  
+  this(){
+    lockObj = new Object();
+  }
+  
+  bool contains(string client_id){
+    synchronized(lockObj){
+      return (client_id in states) !is null;
+    }
+  }
+  
+  void addOrUpdate(string client_id){
+    synchronized(lockObj){
+      auto now = Clock.currTime();
+      states.remove(client_id);
+      states[client_id] = UserState(client_id, now);
+    }
+  }
+  
+  void cleanup(){
+    synchronized(lockObj){
+      auto now = Clock.currTime();
+      auto toRemove = states.byKey
+        .filter!(k => (now - states[k].last_online_at).total!"seconds" > 30)
+        .array;
+      
+      foreach(client_id; toRemove){
+        states.remove(client_id);
+      }
+    }
+  }
+  
+  size_t length() const{
+    synchronized(lockObj){
+      return states.length;
+    }
+  }
+}
+
+__gshared UserStateManager userStateManager;
+
 
 
 import memcached4d;
@@ -87,6 +154,16 @@ string test_args_types_mismash2(test_key3 x, test_key4 y){
 
 
 
+void startCleanupTask(){
+  while(true){
+    writeln("startCleanupTask();");
+    userStateManager.cleanup();
+    //sleep(dur!"hours"(1)); // every 1 hour = 3600 sec
+    sleep(dur!"seconds"(30)); // every 30 sec
+  }
+}
+
+
 
 void main(){
   read_settings_toml(); // read settings, settings validation
@@ -111,6 +188,12 @@ void main(){
     
     i--;
   }
+  
+  
+  
+  userStateManager = new UserStateManager();
+  userStateManager.addOrUpdate("123");
+  
   
   
   auto settings = new HTTPServerSettings;
@@ -141,6 +224,14 @@ void main(){
     listener.stopListening();
   }
   
+  
+  
+  //writeln("userStateManager.states is null? ", userStateManager.states is null);
+  //sleep(dur!"seconds"(1));
+  spawn(&startCleanupTask); // clean inactive user state
+  
+  
+  
   logInfo("Please open http://127.0.0.1:8080/ in your browser.");
   runApplication();
 }
@@ -148,10 +239,47 @@ void main(){
 
 void ws_handle(scope WebSocket sock){
   // simple echo server + :)
-  while(sock.connected){
+  
+  //writeln("sock = ", sock); // vibe.http.websockets.WebSocket
+  //writeln("sock.request = ", sock.request); // GET /ws?client_id=YaHoAnZo3JPYOwX7yn35 HTTP/1.1
+  //writeln("sock.request.requestPath = ", sock.request.requestPath); // /ws
+  //writeln("sock.request.queryString = ", sock.request.queryString); // client_id=YaHoAnZo3JPYOwX7yn35
+  //writeln("sock.request.query = ", sock.request.query); // ["client_id": "YaHoAnZo3JPYOwX7yn35"]
+  
+  string client_id = "";
+  if("client_id" in sock.request.query){
+    client_id = sock.request.query["client_id"];
+    //writeln("found client_id = ", client_id);
+  }else{
+    //writeln("client_id not found");
+    throw new StringException("client_id not found");
+  }
+  
+  bool is_new_client = true;
+  if(userStateManager.contains(client_id)){
+    is_new_client = false;
+    writeln("Reconnection from existing client: ", client_id);
+  }else{
+    writeln("New client connected: ", client_id);
+  }
+  userStateManager.addOrUpdate(client_id);
+  
+  /*
+  try{
+    while(sock.connected){
+      auto msg = sock.receiveText();
+      sock.send(msg ~ " :)");
+    }
+  }catch(Exception ex){
+    writeln("disconnected client_id = ", client_id);
+    writeln("Error: ", ex.msg); // Error: Connection closed while reading message.
+  }
+  */
+  while(sock.waitForData()){
     auto msg = sock.receiveText();
     sock.send(msg ~ " :)");
   }
+  writeln("after disconnect"); // now shows
 }
 
 /*
