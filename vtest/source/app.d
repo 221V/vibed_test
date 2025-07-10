@@ -14,12 +14,14 @@ import vibe.core.log;
 import ws_bert_login : ws_bert_handle, login_test; // login - logged - logout -- via ws with bert ++ memcached + postgresql for sessions
 
 
+
 import std.string;
 import std.array;
 import std.algorithm;
 
 
-import std.datetime : SysTime, Clock; // , dur;
+
+import std.datetime : SysTime, Clock;
 //import core.sync.mutex : Mutex;
 import std.concurrency : spawn;
 import vibe.core.concurrency;
@@ -27,7 +29,11 @@ import vibe.core.core : Task, sleep;
 import core.time : Duration, dur;
 
 
-struct UserState{
+
+
+
+/*
+struct UserState{ // with mutex
   string client_id;
   SysTime last_online_at;
   
@@ -39,7 +45,7 @@ struct UserState{
 
 alias UserStateMap = UserState[string];
 
-class UserStateManager{
+class UserStateManager{ // with mutex
   private UserStateMap states;
   private Object lockObj;
   
@@ -82,6 +88,7 @@ class UserStateManager{
 }
 
 __gshared UserStateManager userStateManager;
+*/
 
 
 
@@ -153,8 +160,8 @@ string test_args_types_mismash2(test_key3 x, test_key4 y){
 }
 
 
-
-void startCleanupTask(){
+/*
+void startCleanupTask(){ // with mutex
   while(true){
     writeln("startCleanupTask();");
     userStateManager.cleanup();
@@ -162,6 +169,7 @@ void startCleanupTask(){
     sleep(dur!"seconds"(30)); // every 30 sec
   }
 }
+*/
 
 
 
@@ -191,8 +199,10 @@ void main(){
   
   
   
-  userStateManager = new UserStateManager();
+  /*
+  userStateManager = new UserStateManager(); // with mutex
   userStateManager.addOrUpdate("123");
+  */
   
   
   
@@ -228,8 +238,8 @@ void main(){
   
   //writeln("userStateManager.states is null? ", userStateManager.states is null);
   //sleep(dur!"seconds"(1));
-  spawn(&startCleanupTask); // clean inactive user state
   
+  //spawn(&startCleanupTask); // clean inactive user state -- with mutex
   
   
   logInfo("Please open http://127.0.0.1:8080/ in your browser.");
@@ -255,14 +265,18 @@ void ws_handle(scope WebSocket sock){
     throw new StringException("client_id not found");
   }
   
+  /*
   bool is_new_client = true;
-  if(userStateManager.contains(client_id)){
+  if(userStateManager.contains(client_id)){ // used with mutex
     is_new_client = false;
     writeln("Reconnection from existing client: ", client_id);
   }else{
     writeln("New client connected: ", client_id);
   }
   userStateManager.addOrUpdate(client_id);
+  */
+  
+  
   
   /*
   try{
