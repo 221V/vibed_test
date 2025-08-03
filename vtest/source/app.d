@@ -15,6 +15,8 @@ import ws_bert_login : ws_bert_handle, login_test; // login - logged - logout --
 
 import memcached_test : memcached_test; // memcached example
 
+import mutex_test : init_mutex, ws_mutex_handle; // mutex example
+
 
 import std.string;
 import std.array;
@@ -24,7 +26,6 @@ import std.variant : Variant;
 
 
 import std.datetime : SysTime, Clock;
-//import core.sync.mutex : Mutex;
 import std.concurrency : spawn;
 import vibe.core.concurrency;
 import vibe.core.core : Task, sleep;
@@ -65,65 +66,6 @@ struct Msg3{
   string client_id;
 }
 +/
-
-
-/*
-struct UserState{ // with mutex
-  string client_id;
-  SysTime last_online_at;
-  
-  this(string client_id, SysTime last_online_at) pure nothrow @safe{
-    this.client_id = client_id;
-    this.last_online_at = last_online_at;
-  }
-}
-
-alias UserStateMap = UserState[string];
-
-class UserStateManager{ // with mutex
-  private UserStateMap states;
-  private Object lockObj;
-  
-  this(){
-    lockObj = new Object();
-  }
-  
-  bool contains(string client_id){
-    synchronized(lockObj){
-      return (client_id in states) !is null;
-    }
-  }
-  
-  void addOrUpdate(string client_id){
-    synchronized(lockObj){
-      auto now = Clock.currTime();
-      states.remove(client_id);
-      states[client_id] = UserState(client_id, now);
-    }
-  }
-  
-  void cleanup(){
-    synchronized(lockObj){
-      auto now = Clock.currTime();
-      auto toRemove = states.byKey
-        .filter!(k => (now - states[k].last_online_at).total!"seconds" > 30)
-        .array;
-      
-      foreach(client_id; toRemove){
-        states.remove(client_id);
-      }
-    }
-  }
-  
-  size_t length() const{
-    synchronized(lockObj){
-      return states.length;
-    }
-  }
-}
-
-__gshared UserStateManager userStateManager;
-*/
 
 
 
@@ -193,16 +135,6 @@ string test_args_types_mismash2(test_key3 x, test_key4 y){
 }
 
 
-/*
-void startCleanupTask(){ // with mutex
-  while(true){
-    writeln("startCleanupTask();");
-    userStateManager.cleanup();
-    //sleep(dur!"hours"(1)); // every 1 hour = 3600 sec
-    sleep(dur!"seconds"(30)); // every 30 sec
-  }
-}
-*/
 
 /+
 void startCleanupTask2(){ // with message passing (actors model like in Erlang); worker -- err here - do not tick every 30 sec
@@ -309,13 +241,6 @@ void main(){
   
   
   
-  /*
-  userStateManager = new UserStateManager(); // with mutex
-  userStateManager.addOrUpdate("123");
-  */
-  
-  
-  
   auto settings = new HTTPServerSettings;
   //settings.port = 8080;
   //settings.bindAddresses = ["::1", "127.0.0.1"];
@@ -333,6 +258,7 @@ void main(){
   //router.get("/", staticTemplate!"index.html");
   router.get("/", serveStaticFile("public/index.html") ); // static html + ws echo example
   router.get("/ws", handleWebSockets(&ws_handle) ); // static html + ws echo example
+  router.get("/ws_mutex", handleWebSockets(&ws_mutex_handle) ); // static html + ws echo example + mutex example
   router.get("/test", &test); // Mustache template + postgresql pool example
   router.get("/ws_login_test", handleWebSockets(&ws_bert_handle) ); // ws handler begins from "ws_" and next same http page path // login - logged - logout -- via ws with bert
   router.get("/login_test", &login_test); // login - logged - logout -- via ws with bert
@@ -347,10 +273,9 @@ void main(){
   
   
   
-  //writeln("userStateManager.states is null? ", userStateManager.states is null);
-  //sleep(dur!"seconds"(1));
+  init_mutex(); // mutex example
   
-  //spawn(&startCleanupTask); // clean inactive user state -- with mutex
+  
   
   /*
   user_state_pid = spawn(&startCleanupTask2); // worker - clean inactive user state -- with message passing (actors model like in Erlang) -- err here - do not tick every 30 sec
@@ -382,16 +307,6 @@ void ws_handle(scope WebSocket sock){
     throw new StringException("client_id not found");
   }
   
-  /*
-  bool is_new_client = true;
-  if(userStateManager.contains(client_id)){ // used with mutex
-    is_new_client = false;
-    writeln("Reconnection from existing client: ", client_id);
-  }else{
-    writeln("New client connected: ", client_id);
-  }
-  userStateManager.addOrUpdate(client_id);
-  */
   
   /*
   user_state_pid.send(Msg3(thisTid, 1, client_id)); // 1 for check is client exists -- err here - do not tick every 30 sec
@@ -560,7 +475,6 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   writeln("tr 3 = ", Tr(Lang, TKey.apples, [], 2) ) ;
   writeln("tr 3 = ", Tr(Lang, TKey.apples, [], 5) );
   writeln("tr 4 = ", Tr(Lang, TKey.apples_n_oranges, ["6", "7"], 0) );
-  
   
   
   

@@ -9,6 +9,7 @@
 
 <header>
   <h1>Websocket test</h1>
+  <p>change <b>/ws</b> to <b>/ws_mutex</b> for mutex example<br>use <b>disconnect();</b> and <b>connect();</b> in browser console</p>
   <div id="status"></div>
 </header>
 
@@ -59,6 +60,7 @@ var connected = document.getElementById('connected');
 var content = document.getElementById('content');
 var output = document.getElementById('output');
 
+//server.value = 'ws://' + window.location.host + '/ws_mutex';
 server.value = 'ws://' + window.location.host + '/ws';
 connected.style.display = 'none';
 content.style.display = 'none';
