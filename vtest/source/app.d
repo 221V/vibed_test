@@ -13,6 +13,7 @@ import vibe.core.log;
 
 import ws_bert_login : ws_bert_handle, login_test; // login - logged - logout -- via ws with bert ++ memcached + postgresql for sessions
 
+import memcached_test : memcached_test; // memcached example
 
 
 import std.string;
@@ -125,8 +126,6 @@ __gshared UserStateManager userStateManager;
 */
 
 
-
-import memcached4d;
 
 import std.conv : to;
 
@@ -334,9 +333,10 @@ void main(){
   //router.get("/", staticTemplate!"index.html");
   router.get("/", serveStaticFile("public/index.html") ); // static html + ws echo example
   router.get("/ws", handleWebSockets(&ws_handle) ); // static html + ws echo example
-  router.get("/test", &test); // Mustache template + memcached + postgresql pool example
+  router.get("/test", &test); // Mustache template + postgresql pool example
   router.get("/ws_login_test", handleWebSockets(&ws_bert_handle) ); // ws handler begins from "ws_" and next same http page path // login - logged - logout -- via ws with bert
   router.get("/login_test", &login_test); // login - logged - logout -- via ws with bert
+  router.get("/memcached_test", &memcached_test); // memcached example
   router.get("*", serveStaticFiles("public/"));
   
   //auto listener = listenHTTP(settings, &hello);
@@ -515,9 +515,6 @@ void test_pg_conn_driver_queries(){
 
 
 void test(HTTPServerRequest req, HTTPServerResponse res){
-  auto cache = memcachedConnect("127.0.0.1:11211");
-  
-  
   
   /* test unproper arguments order */
   /* do not */
@@ -555,6 +552,7 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   
   
   
+  // i18n example
   Language Lang = Language.uk;
   writeln("tr 1 = ", Tr(Lang, TKey.hello));
   writeln("tr 2 = ", Tr(Lang, TKey.welcome, ["username"], 0) );
@@ -564,22 +562,6 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   writeln("tr 4 = ", Tr(Lang, TKey.apples_n_oranges, ["6", "7"], 0) );
   
   
-  
-  writeln("get test1 = ", cache.get!string("test1"));
-  
-  string v1 = "value1 = 🔥🦀";
-  
-  if(cache.store("test1", v1) == RETURN_STATE.SUCCESS ){
-    writeln("stored successfully");
-    writeln("get stored: ", cache.get!string("test1") );
-  }else{
-    writeln("not stored");
-  }
-  
-  string result = cache.get!string("test1");
-  writeln("get test1 = ", result);
-  
-  writeln(cache.del("test1"));
   
   
   //test_pg_conn_driver();
@@ -614,7 +596,7 @@ void test(HTTPServerRequest req, HTTPServerResponse res){
   context.useSection("maybe1");
   
   context["part1"] = mustache2.render("part1", context2);
-  context["result1"] = "Hello, World!\n" ~ result;
+  context["result1"] = "Hello, World!\n";
   
   res.headers["Content-Type"] = "text/html; charset=utf-8";
   
