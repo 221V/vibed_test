@@ -18,11 +18,11 @@ import memcached_test : memcached_test; // memcached example
 import mutex_test : init_mutex, ws_mutex_handle; // mutex example
 
 
+import std.stdio : writeln, File;
 import std.string;
 import std.array;
 import std.algorithm;
 import std.variant : Variant;
-
 
 
 import std.datetime : SysTime, Clock;
@@ -274,6 +274,27 @@ void main(){
   
   
   init_mutex(); // mutex example
+  
+  
+  
+  // write to file, read from file
+  auto file = File("test.txt", "w");
+  //file.write("hello");
+  file.writeln("hello");
+  file.writeln("world");
+  file.writeln("test777");
+  file.close();
+  file.open("test.txt", "r");
+  while(!file.eof()){
+    string line = strip( file.readln() );
+    writeln("read line -> |", line);
+  }
+  /*
+read line -> |hello
+read line -> |world
+read line -> |test777
+read line -> |
+  */
   
   
   
